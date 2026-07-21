@@ -1,0 +1,19 @@
+; Engine configuration file.
+; Godot 4.7 stable is the pinned implementation baseline.
+config_version=5
+
+[application]
+config/name="StarPoint CN Offline"
+run/main_scene="res://src/presentation/main_scene.tscn"
+config/features=PackedStringArray("4.7")
+
+[display]
+window/size/viewport_width=720
+window/size/viewport_height=1280
+window/size/window_width_override=540
+window/size/window_height_override=960
+window/stretch/mode="canvas_items"
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"

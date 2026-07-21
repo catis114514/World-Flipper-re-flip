@@ -1,0 +1,15 @@
+# Copy this block into: %USERPROFILE%\.ssh\config
+# Replace every value wrapped in angle brackets.
+
+Host wf-vm
+    HostName <VM_IP_ADDRESS>
+    Port 22
+    User <VM_USERNAME>
+    IdentityFile <WINDOWS_PRIVATE_KEY_PATH>
+    IdentitiesOnly yes
+    ServerAliveInterval 30
+    ServerAliveCountMax 3
+
+# Example IdentityFile values:
+# IdentityFile C:/Users/YourName/.ssh/id_ed25519
+# IdentityFile G:/keys/wf_vm_ed25519
