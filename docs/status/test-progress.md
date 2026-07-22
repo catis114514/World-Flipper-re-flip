@@ -165,3 +165,29 @@ ClientError 2274: ID: 141010のキャラクターの entry_count が存在しま
 
 临时防御：在所有返回 `character_list` 的服务器端点确保每条记录都含 `entry_count`，但当前未实施（不影响核心流程）。
 
+## Godot Offline Domain Batch (2026-07-22)
+
+| Check | Result |
+|---|---|
+| CN offline catalog | 419 main quests / 505 characters / 436 equipments / 584 banners / 581 projected reward pools |
+| Catalog determinism | `1ed88030046fa325699e2ac109373b838a0fedaf2ebb02d476fbb3dd47d1b5de` |
+| Save schema | v6: stamina anchor, rank points, gacha RNG, operation ledger, inbox |
+| Local actions | party rotation, leader upgrade, stamina-spending battle start, idempotent 1/10 draw, inbox claim |
+| Gacha movie flag | independently sampled per position at 10.05%; does not affect rewards |
+| Battle additions | transactional stamina start, CN pooled/character EXP result, 900-frame Fever state, touch skill controls |
+| Godot tests | `PASS 437 assertions`, including normal-input playable replay |
+| Converter tests | core fixture 2/2; offline catalog two-run byte determinism passed |
+| Windows release | `artifacts/windows/StarPointCNOffline.exe`, SHA-256 `50d0bb9160bd750901c7899bf8824eee32426eb35d16fe6f927b394d0be4f6e9` |
+
+Cataloging metadata does not imply complete battle conversion. Only quest `1001002` currently owns a validated full battle graph; missing CN terrain and animation files remain explicit compatibility gaps.
+
+The main-scene flow now follows canonical prerequisites: `1001001` story summary → playable `1001002` battle → `1001003` story summary. Progress then stops explicitly at unsupported battle `1002001`, while a replay button keeps the converted battle accessible.
+
+### Legacy compatibility-server hardening
+
+- Signup viewer IDs are random sessions rather than predictable account IDs.
+- `/load` validates the viewer session and has no account-1 fallback.
+- `/mail` no longer server-interpolates query strings; the existing browser code uses `textContent`.
+- Invalid JSON is rejected as 400; missing gacha player data receives an explicit response.
+- Default bind address is `127.0.0.1`.
+- `python3 scripts/test_server_security_fixes.py`: PASS.

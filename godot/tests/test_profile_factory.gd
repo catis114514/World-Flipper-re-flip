@@ -4,7 +4,7 @@ const ProfileFactory = preload("res://src/domain/profile_factory.gd")
 
 func run(t) -> void:
     var profile = ProfileFactory.create_default()
-    t.assert_equal(profile.schema_version, 5, "default profile schema")
+    t.assert_equal(profile.schema_version, 6, "default profile schema")
     t.assert_equal(profile.profile_id, "local-1", "default profile id")
     t.assert_equal(profile.party.size(), 3, "default party has three main slots")
     t.assert_true(profile.roster.size() >= 3, "default roster can populate the party")

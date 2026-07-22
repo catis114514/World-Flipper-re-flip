@@ -236,7 +236,7 @@ const routes = async (fastify: FastifyInstance) => {
         const playerId = resolvePlayerIdSync(viewerIdSession.accountId)!
         if (playerId === null) return reply.status(500).send({ "error": "Internal Server Error", "message": "No players bound to account." })
         const player = getPlayerSync(playerId)
-        if (player === null) return
+        if (player === null) return reply.status(500).send({ "error": "Internal Server Error", "message": "Player data missing." })
 
         // get the gacha
         const gachaData = getGachaSync(gachaId)

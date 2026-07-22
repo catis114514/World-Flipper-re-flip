@@ -4,6 +4,7 @@ const SaveRepository = preload("res://src/persistence/save_repository.gd")
 const LocalProfileService = preload("res://src/domain/local_profile_service.gd")
 const StaticContentRepository = preload("res://src/content/static_content_repository.gd")
 const BattleSessionService = preload("res://src/domain/battle_session_service.gd")
+const ProfileFactory = preload("res://src/domain/profile_factory.gd")
 
 func run(t) -> void:
     var save_path := "user://tests/corrupt-profile.json"
@@ -21,3 +22,16 @@ func run(t) -> void:
     var preserved := FileAccess.open(save_path, FileAccess.READ)
     t.assert_equal(preserved.get_as_text(), corrupt_text, "corrupt primary save remains available for recovery")
     preserved.close()
+
+    var recovery_path := "user://tests/corrupt-primary-with-backup.json"
+    var recovery_repository = SaveRepository.new(recovery_path)
+    var good = ProfileFactory.create_default()
+    good.currencies["free_mana"] = 111
+    t.assert_equal(recovery_repository.save(good), OK, "recovery fixture saves")
+    DirAccess.copy_absolute(ProjectSettings.globalize_path(recovery_path), ProjectSettings.globalize_path(recovery_path + ".bak"))
+    var broken := FileAccess.open(recovery_path, FileAccess.WRITE)
+    broken.store_string("{broken-primary")
+    broken.close()
+    good.currencies["free_mana"] = 222
+    t.assert_equal(recovery_repository.save(good), OK, "save replaces corrupt primary without promoting it over backup")
+    t.assert_equal(recovery_repository.load_profile().currencies["free_mana"], 222, "recovered save remains parseable")

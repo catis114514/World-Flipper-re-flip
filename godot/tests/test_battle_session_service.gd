@@ -46,8 +46,9 @@ func run(t) -> void:
     t.assert_true(profile != null, "missing save creates local profile")
     t.assert_true(FileAccess.file_exists(save_path), "created profile is persisted")
 
-    var battle = session.start_battle(profile, "1001002", "run-1")
+    var battle = session.start_battle(profile, "1001002", "run-1", 6, 1000)
     t.assert_true(battle != null, "valid party and quest start battle")
+    t.assert_equal(profile.stamina_state["stored_value"], 44, "battle start deducts stamina in the active-run transaction")
     battle.enemy_actions_enabled = false
     t.assert_equal(profile.active_run["run_id"], "run-1", "active run records id")
     t.assert_equal(profile.active_run["party_snapshot"]["total_atk"], 48, "active run persists the immutable party attack snapshot")
@@ -60,12 +61,21 @@ func run(t) -> void:
     t.assert_true(not session.finish_battle(profile, battle, "result-premature"), "running battle cannot apply rewards")
     t.assert_equal(profile.active_run["run_id"], "run-1", "premature finish leaves active run intact")
 
+    var duplicate_profile = load("res://src/domain/profile_data.gd").from_dict(profile.to_dict())
+    duplicate_profile.active_run = {}
+    duplicate_profile.party.clear()
+    duplicate_profile.party.append(141005)
+    duplicate_profile.party.append(141005)
+    t.assert_true(session.start_battle(duplicate_profile, "1001002", "run-duplicate") == null, "duplicate party members are rejected at session boundary")
+
     BattleTestDriver.clear_quest(battle)
     t.assert_equal(battle.status, "cleared", "full canonical quest simulation clears")
     t.assert_true(session.finish_battle(profile, battle, "result-run-1"), "cleared battle applies result")
 
     var restored = save_repository.load_profile()
     t.assert_equal(restored.currencies["free_mana"], 10020, "CN quest mana persists")
+    t.assert_equal(restored.currencies["exp_pool"], 13, "CN pooled EXP persists")
+    t.assert_equal(restored.character_progress["141005"]["exp"], 13, "CN character EXP applies to the selected party")
     t.assert_equal(int(restored.quest_progress["1001002"]["clear_count"]), 1, "clear progress persists")
     t.assert_equal(restored.active_run, {}, "finished run clears active state")
     t.assert_true(not session.finish_battle(restored, battle, "result-run-1"), "replayed result is rejected")

@@ -20,6 +20,8 @@ This directory contains guidelines for backend development. Fill in each file wi
 | [Quality Guidelines](./quality-guidelines.md) | Code standards, forbidden patterns | To fill |
 | [Logging Guidelines](./logging-guidelines.md) | Structured logging, log levels | To fill |
 | [Godot Offline Content](./godot-offline-content.md) | Fixture conversion, validation, and run/result contracts | Active |
+| [Godot Offline Domain](./godot-offline-domain.md) | Catalog, save schema, stamina, party, gacha, inbox, and transaction contracts | Active |
+| [Local Server Security](./server-local-security.md) | Viewer sessions, load authorization, parser, XSS, and loopback contracts | Active |
 | [Gacha Movie Selection](./gacha-movie-selection.md) | Original CN movie probability, seed pools, and position independence | Active |
 
 ---

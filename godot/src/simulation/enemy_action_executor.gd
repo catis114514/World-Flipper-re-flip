@@ -39,7 +39,10 @@ func step(player_position: Vector2, player_radius: float) -> int:
         projectile["remaining_frames"] = int(projectile["remaining_frames"]) - 1
         var radius := float(projectile["radius"])
         if Vector2(projectile["position"]).distance_squared_to(player_position) <= pow(radius + player_radius, 2.0):
-            damage += int(projectile["damage"])
+            # Multiple overlapping projectiles belong to the same fixed-step
+            # hit window. The AS3 runtime's min-hit interval permits one
+            # damage application, not the sum of an entire ring.
+            damage = maxi(damage, int(projectile["damage"]))
             projectiles.remove_at(index)
             continue
         if int(projectile["remaining_frames"]) <= 0 or not arena.grow(radius).has_point(Vector2(projectile["position"])):

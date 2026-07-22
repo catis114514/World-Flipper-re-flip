@@ -15,7 +15,7 @@ const routes = async (fastify: FastifyInstance) => {
         reply.status(200).send({
             servertime: getServerTime(),
             date: date.toISOString(),
-            isCustom: date.getTime() !== Date.now()
+            isCustom: getTimeOffset() !== null
         })
     })
 

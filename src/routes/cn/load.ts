@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { generateDataHeaders, getServerTime, getServerDate } from "../../utils";
-import { getPlayerSync, dailyResetPlayerDataSync, collectPlayerDataPooledExpSync, updatePlayerSync, getPlayerActiveQuestSync } from "../../data/wdfpData";
+import { getPlayerSync, dailyResetPlayerDataSync, collectPlayerDataPooledExpSync, updatePlayerSync, getPlayerActiveQuestSync, getSession } from "../../data/wdfpData";
 import { getClientSerializedData } from "../../data/utils";
 import { resolvePlayerIdSync } from "../../data/activeAccount";
 import { getDisplayHost } from "../../data/multiRoom";
@@ -86,7 +86,15 @@ const routes = async (fastify: FastifyInstance) => {
     fastify.post("/load", async (request: FastifyRequest, reply: FastifyReply) => {
         try {
         const body = request.body as CnLoadBody;
-        const accountId = body.viewer_id || body.keychain || 1;
+        const viewerId = body.viewer_id || body.keychain;
+        if (!viewerId || isNaN(viewerId)) {
+            return reply.status(400).send({ error: "Bad Request", message: "Invalid viewer id" });
+        }
+        const viewerSession = await getSession(String(viewerId));
+        if (!viewerSession) {
+            return reply.status(400).send({ error: "Bad Request", message: "Invalid viewer id" });
+        }
+        const accountId = viewerSession.accountId;
 
         const playerId = resolvePlayerIdSync(accountId);
         if (!playerId) {
@@ -107,7 +115,7 @@ const routes = async (fastify: FastifyInstance) => {
             updatePlayerSync({ id: player.id, lastLoginTime: now });
         }
 
-        const clientData = getClientSerializedData(playerId, { viewerId: accountId }) as any;
+        const clientData = getClientSerializedData(playerId, { viewerId }) as any;
         if (clientData === null) {
             return reply.status(500).send({ error: "Internal Server Error", message: "No player data." });
         }
@@ -136,7 +144,7 @@ const routes = async (fastify: FastifyInstance) => {
         reply.status(200).send({
             data_headers: generateDataHeaders({
                 asset_update: true,
-                viewer_id: accountId,
+                viewer_id: viewerId,
                 servertime: getServerTime(),
             }),
             data: clientData

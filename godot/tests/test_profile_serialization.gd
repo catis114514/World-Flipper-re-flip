@@ -18,3 +18,6 @@ func run(t) -> void:
     t.assert_equal(restored.equipment_inventory, original.equipment_inventory, "equipment inventory survives round-trip")
     t.assert_equal(restored.quest_progress, original.quest_progress, "progress survives round-trip")
     t.assert_equal(restored.applied_result_ids, original.applied_result_ids, "result ids survive round-trip")
+    t.assert_equal(restored.stamina_state, original.stamina_state, "stamina anchor survives round-trip")
+    t.assert_equal(restored.gacha_state, original.gacha_state, "gacha RNG state survives round-trip")
+    t.assert_equal(restored.operation_ledger, original.operation_ledger, "operation ledger survives round-trip")

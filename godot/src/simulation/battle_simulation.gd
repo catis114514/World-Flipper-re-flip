@@ -65,6 +65,13 @@ var party_conditions: Dictionary = {}
 var enemy_conditions: Dictionary = {}
 var direct_attack_count := 0
 var fever_points := 0
+var fever_active := false
+var fever_remaining_frames := 0
+var flippers_pressed := false
+var outhole_y := 1210.0
+var outhole_relaunch_count := 0
+var player_damage_cooldown_frames := 0
+var movement_skill_fraction := 0.0
 
 func _init(quest_data: Dictionary, session_run_id: String, battle_party: Dictionary = {}) -> void:
     quest = quest_data.duplicate(true)
@@ -76,6 +83,7 @@ func _init(quest_data: Dictionary, session_run_id: String, battle_party: Diction
     var arena_size := Vector2(float(arena["width"]), float(arena["height"]))
     var gravity_per_step := Vector2(0.0, float(arena["gravity_y"]) / 3600.0)
     var arena_bounds := Rect2(Vector2.ZERO, arena_size)
+    outhole_y = float(arena.get("floor_y", arena_size.y - 100.0)) + 30.0
     world = FixedStepWorldScript.new(gravity_per_step, arena_bounds)
     world.set_terrain_segments(quest["terrain_runtime"]["segments"])
     action_executor = EnemyActionExecutorScript.new(arena_bounds)
@@ -122,6 +130,7 @@ func set_player_state(new_position: Vector2, new_velocity: Vector2) -> void:
 func set_flippers_pressed(is_pressed: bool) -> void:
     if status != "running":
         return
+    flippers_pressed = is_pressed
     if is_pressed:
         left_flipper.on_pressed()
         right_flipper.on_pressed()
@@ -133,6 +142,8 @@ func step() -> void:
     if status != "running":
         return
     elapsed_frames += 1
+    player_damage_cooldown_frames = maxi(0, player_damage_cooldown_frames - 1)
+    _step_fever()
     _step_player_skill_runtime()
     if status != "running":
         return
@@ -156,7 +167,10 @@ func step() -> void:
         if frames_until_spawn == 0:
             _spawn_zone_enemy()
 
+    var player_position_before_step := player.position
     world.step(1.0)
+    _record_movement_skill_points(player_position_before_step.distance_to(player.position))
+    _resolve_outhole_relaunch()
     if enemy_active:
         for contact in world.contacts:
             var first: SimBody = contact[0]
@@ -182,10 +196,23 @@ func step() -> void:
         _step_enemy_actions()
         _step_funnel_entities()
     var projectile_damage: int = action_executor.step(player.position, player.radius)
-    if projectile_damage > 0:
-        player_hp = maxi(0, player_hp - projectile_damage)
+    if projectile_damage > 0 and player_damage_cooldown_frames == 0:
+        player_hp = maxi(0, player_hp - _scale_enemy_damage(projectile_damage))
+        player_damage_cooldown_frames = 40
         if player_hp == 0:
             _fail("party_defeated")
+
+func _resolve_outhole_relaunch() -> void:
+    if player.position.y < outhole_y or not flippers_pressed: return
+    outhole_relaunch_count += 1
+    player.position = Vector2(world.bounds.position.x + world.bounds.size.x * 0.5, outhole_y - 100.0)
+    var horizontal := -4.0 if outhole_relaunch_count % 2 == 0 else 4.0
+    player.velocity = Vector2(horizontal, -70.0)
+
+func _scale_enemy_damage(raw_damage: int) -> int:
+    var formula: Dictionary = current_enemy_definition.get("atk_formula", {})
+    var reference_party_hp := maxi(1, int(formula.get("party_hp_level_1", player_max_hp)))
+    return maxi(1, roundi(float(raw_damage) * float(player_max_hp) / float(reference_party_hp)))
 
 func get_progress_snapshot() -> Dictionary:
     return {
@@ -222,6 +249,10 @@ func get_progress_snapshot() -> Dictionary:
         "pending_player_skill_event_count": pending_player_skill_events.size(),
         "direct_attack_count": direct_attack_count,
         "fever_points": fever_points,
+        "fever_active": fever_active,
+        "fever_remaining_frames": fever_remaining_frames,
+        "outhole_relaunch_count": outhole_relaunch_count,
+        "player_damage_cooldown_frames": player_damage_cooldown_frames,
     }
 
 func get_skill_snapshots() -> Array[Dictionary]:
@@ -361,7 +392,21 @@ func _apply_skill_activation_abilities(slot_index: int) -> void:
         if kind == "FixedHeal" and str(ability.get("trigger_kind", "")) in ["None", "Instant"]:
             player_hp = mini(player_max_hp, player_hp + maxi(1, floori(float(player_max_hp) * float(ability.get("power1", 0.0)))))
         elif kind == "AddFeverPoint" and str(ability.get("trigger_kind", "")) == "None":
-            fever_points = mini(1000, fever_points + maxi(1, roundi(float(ability.get("power1", 0.0)) * 100.0)))
+            _add_fever_points(maxi(1, roundi(float(ability.get("power1", 0.0)) * 100.0)))
+
+func _add_fever_points(amount: int) -> void:
+    if amount <= 0 or fever_active: return
+    fever_points = mini(1000, fever_points + amount)
+    if fever_points >= 1000:
+        fever_active = true
+        fever_remaining_frames = 900
+
+func _step_fever() -> void:
+    if not fever_active: return
+    fever_remaining_frames = maxi(0, fever_remaining_frames - 1)
+    if fever_remaining_frames == 0:
+        fever_active = false
+        fever_points = 0
 
 func _ability_power_flip_bonus() -> float:
     var bonus := 0.0
@@ -377,6 +422,15 @@ func _record_direct_attack() -> void:
     power_flip_level = _power_flip_level_for_combo(combo_count)
     for slot in skill_slots:
         slot["skill_point"] = mini(int(slot["max_skill_point"]), int(slot["skill_point"]) + skill_point_gain_per_direct_attack)
+
+func _record_movement_skill_points(distance: float) -> void:
+    if distance <= 0.0: return
+    movement_skill_fraction += distance * 0.05
+    var gained := floori(movement_skill_fraction)
+    if gained <= 0: return
+    movement_skill_fraction -= float(gained)
+    for slot in skill_slots:
+        slot["skill_point"] = mini(int(slot["max_skill_point"]), int(slot["skill_point"]) + gained)
 
 func _power_flip_level_for_combo(value: int) -> int:
     if value >= int(power_flip_combo_thresholds[2]): return 3
@@ -402,11 +456,14 @@ func trigger_enemy_action(action_id: String) -> int:
 func build_result(result_id: String) -> Dictionary:
     if status != "cleared" or result_id.is_empty() or run_id.is_empty():
         return {}
+    var result_rewards: Dictionary = quest["rewards"].duplicate(true)
+    result_rewards["exp_pool"] = int(quest.get("pool_exp", 0))
+    result_rewards["_character_exp"] = int(quest.get("character_exp", 0))
     return {
         "result_id": result_id,
         "run_id": run_id,
         "quest_id": str(quest["id"]),
-        "rewards": quest["rewards"].duplicate(true),
+        "rewards": result_rewards,
     }
 
 func _enter_zone(zone_index: int) -> void:

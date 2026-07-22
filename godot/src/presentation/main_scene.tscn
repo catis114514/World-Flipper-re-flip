@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://src/presentation/main_controller.gd" id="1_controller"]
+[ext_resource type="Theme" path="res://src/presentation/offline_theme.tres" id="2_theme"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_controller")
@@ -17,8 +18,9 @@ color = Color(0.035, 0.055, 0.09, 0.25)
 offset_left = 80.0
 offset_top = 250.0
 offset_right = 640.0
-offset_bottom = 760.0
-theme_override_constants/separation = 28
+offset_bottom = 1050.0
+theme_override_constants/separation = 18
+theme = ExtResource("2_theme")
 
 [node name="Title" type="Label" parent="UI/Menu"]
 layout_mode = 2
@@ -44,11 +46,43 @@ theme_override_font_sizes/font_size = 20
 text = "预设队伍：141005 / 121002 / 131004"
 horizontal_alignment = 1
 
+[node name="SystemLabel" type="Label" parent="UI/Menu"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+text = "正在加载离线目录……"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="Actions" type="HBoxContainer" parent="UI/Menu"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="CyclePartyButton" type="Button" parent="UI/Menu/Actions"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "切换队伍"
+
+[node name="UpgradeButton" type="Button" parent="UI/Menu/Actions"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "升级队长"
+
+[node name="GachaButton" type="Button" parent="UI/Menu"]
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+text = "开服纪念扭蛋 十连（1500）"
+
 [node name="StartButton" type="Button" parent="UI/Menu"]
 custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
 text = "进入 1001002「开始的草原」"
+
+[node name="ReplayButton" type="Button" parent="UI/Menu"]
+visible = false
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+text = "重玩 1001002「开始的草原」"
 
 [node name="BattleHUD" type="VBoxContainer" parent="UI"]
 visible = false
@@ -56,6 +90,7 @@ offset_left = 24.0
 offset_top = 24.0
 offset_right = 696.0
 offset_bottom = 130.0
+theme = ExtResource("2_theme")
 
 [node name="EnemyLabel" type="Label" parent="UI/BattleHUD"]
 layout_mode = 2
@@ -69,12 +104,35 @@ theme_override_font_sizes/font_size = 20
 text = "空格 / 鼠标左键：弹板"
 horizontal_alignment = 1
 
+[node name="SkillButtons" type="HBoxContainer" parent="UI/BattleHUD"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Skill1" type="Button" parent="UI/BattleHUD/SkillButtons"]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "技能 1"
+
+[node name="Skill2" type="Button" parent="UI/BattleHUD/SkillButtons"]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "技能 2"
+
+[node name="Skill3" type="Button" parent="UI/BattleHUD/SkillButtons"]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "技能 3"
+
 [node name="ResultPanel" type="PanelContainer" parent="UI"]
 visible = false
 offset_left = 110.0
-offset_top = 430.0
+offset_top = 300.0
 offset_right = 610.0
-offset_bottom = 760.0
+offset_bottom = 900.0
+theme = ExtResource("2_theme")
 
 [node name="ResultContent" type="VBoxContainer" parent="UI/ResultPanel"]
 layout_mode = 2
@@ -82,9 +140,10 @@ theme_override_constants/separation = 30
 
 [node name="ResultLabel" type="Label" parent="UI/ResultPanel/ResultContent"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 34
+theme_override_font_sizes/font_size = 28
 text = "通关！"
 horizontal_alignment = 1
+autowrap_mode = 2
 
 [node name="ReturnButton" type="Button" parent="UI/ResultPanel/ResultContent"]
 custom_minimum_size = Vector2(0, 70)

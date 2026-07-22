@@ -11,8 +11,19 @@ func apply_clear_result(
         return false
 
     for currency_name in rewards:
+        if str(currency_name) == "_character_exp":
+            continue
         var current_amount := int(profile.currencies.get(currency_name, 0))
         profile.currencies[str(currency_name)] = current_amount + int(rewards[currency_name])
+
+    var character_exp := int(rewards.get("_character_exp", 0))
+    if character_exp > 0:
+        for character_id in profile.party:
+            var key := str(character_id)
+            if not profile.character_progress.has(key):
+                continue
+            var character: Dictionary = profile.character_progress[key]
+            character["exp"] = int(character.get("exp", 0)) + character_exp
 
     var progress: Dictionary = profile.quest_progress.get(quest_id, {})
     progress["cleared"] = true

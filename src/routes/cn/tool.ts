@@ -1,7 +1,6 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { generateDataHeaders } from "../../utils";
-import { insertAccount, insertDefaultPlayerSync, getPlayerSync, insertSessionWithToken, updateAccountSync, deleteSession, getDeviceBindingSync, insertDeviceBindingSync, deleteDeviceBindingSync, getAccount } from "../../data/wdfpData";
-import { SessionType } from "../../data/types";
+import { insertAccount, insertDefaultPlayerSync, updateAccountSync, getDeviceBindingSync, insertDeviceBindingSync, deleteDeviceBindingSync, getAccount, generateViewerIdSession } from "../../data/wdfpData";
 import { saveAccountDefaultPlayer } from "../../data/activeAccount";
 
 interface CnSignupBody {
@@ -26,8 +25,6 @@ function generateLoginToken(): string {
     }
     return token;
 }
-
-const viewerIdToAccountId = new Map<number, number>();
 
 interface GetHeaderResponseBody {
     viewer_id: number
@@ -77,7 +74,6 @@ const routes = async (fastify: FastifyInstance) => {
                 accountId = binding.account_id
                 newAccount = false
                 updateAccountSync({ id: accountId, lastLoginTime: new Date() })
-                try { deleteSession(String(accountId)) } catch (_) {}
             } else {
                 // Account was deleted — clean up stale binding and create new account
                 deleteDeviceBindingSync(deviceId)
@@ -100,19 +96,13 @@ const routes = async (fastify: FastifyInstance) => {
             insertDeviceBindingSync(deviceId, accountId)
         }
 
-        await insertSessionWithToken({
-            token: String(accountId),
-            accountId: accountId,
-            type: SessionType.VIEWER,
-            expires: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-        });
-
-        viewerIdToAccountId.set(accountId, accountId);
+        const viewerSession = await generateViewerIdSession(accountId);
+        const viewerId = Number(viewerSession.token);
 
         reply.header("content-type", "application/x-msgpack");
         reply.status(200).send({
             data_headers: generateDataHeaders({
-                viewer_id: accountId,
+                viewer_id: viewerId,
                 short_udid: shortUdid,
                 udid: udid,
             }),

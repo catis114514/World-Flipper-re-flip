@@ -152,6 +152,15 @@ Extended ability rules:
 - DamageCount and SkillMax triggers read explicit simulation counters/gauges.
 - Healing clamps to max HP; fever gain clamps to the fever meter.
 - Skill-linked dispatch inferred from statue-group context remains marked as adapter until original Gear trigger routing is ported.
+
+Playable fallback loop:
+
+- The unavailable CN terrain includes an outhole/transit-pod flow. The fallback arena must relaunch a ball that reaches the recorded floor/outhole boundary when the player presses the flippers; it must not leave the ball permanently decaying on the bottom bound.
+- Outhole relaunch remains an explicit adapter and is replaced when the original terrain/object animation data is recovered.
+- Enemy projectile rings honor one damage application per fixed-step hit interval. Overlapping projectiles in the same ring/window apply the strongest hit, never the sum of every overlap.
+- Enemy raw attack values are scaled from the recovered `atk_formula.party_hp_level_1` reference to the actual snapshotted party max HP, preserving intended damage percentage rather than treating the reference-party raw value as absolute damage.
+- Player skill gauges gain from ball travel distance as in the AS3 member update; the current conversion factor is an explicit deterministic adapter until the exact distance coefficient is recovered.
+- A fixed input replay must clear `1001002` with enemy actions enabled, skills activated through normal gauge readiness, and no direct position/HP mutation by the test.
 Save schema 2 progression contract:
 
 - `character_progress[character_id]` owns level, EXP, ability levels, and `{weapon_id,soul_id}`.

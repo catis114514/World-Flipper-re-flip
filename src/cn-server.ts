@@ -247,8 +247,10 @@ fastify.addHook("onSend", (_, reply, payload, done) => {
 function jsonParser(_: FastifyRequest, body: string, done: ContentTypeParserDoneFunction) {
     try {
         done(null, JSON.parse(body));
-    } catch {
-        done(null, undefined);
+    } catch (error) {
+        const parseError = error instanceof Error ? error : new Error("Invalid JSON");
+        (parseError as any).statusCode = 400;
+        done(parseError, undefined);
     }
 }
 
@@ -504,7 +506,7 @@ fastify.setNotFoundHandler((request, reply) => {
     reply.status(404).send({ error: "Not Found" });
 });
 
-const host = process.env.CN_LISTEN_HOST ?? "0.0.0.0";
+const host = process.env.CN_LISTEN_HOST ?? "127.0.0.1";
 const port = parseInt(process.env.CN_LISTEN_PORT ?? "8001");
 
 fastify.listen({ port, host }, (err, address) => {

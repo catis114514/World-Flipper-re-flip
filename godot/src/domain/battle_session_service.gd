@@ -5,6 +5,7 @@ const ProfileFactoryScript = preload("res://src/domain/profile_factory.gd")
 const ProfileDataScript = preload("res://src/domain/profile_data.gd")
 const BattleSimulationScript = preload("res://src/simulation/battle_simulation.gd")
 const BattlePartySnapshotScript = preload("res://src/domain/battle_party_snapshot.gd")
+const OfflineGameServiceScript = preload("res://src/domain/offline_game_service.gd")
 
 var save_repository
 var profile_service
@@ -26,13 +27,16 @@ func load_or_create_profile() -> ProfileData:
         return null
     return profile
 
-func start_battle(profile: ProfileData, quest_id: String, run_id: String):
+func start_battle(profile: ProfileData, quest_id: String, run_id: String, entry_cost: int = -1, now_unix: int = 0):
     if run_id.is_empty() or not profile.active_run.is_empty():
         return null
     if profile.applied_result_ids.has(_result_id_for_run(run_id)):
         return null
     var quest: Dictionary = content_repository.get_quest(quest_id)
     if quest.is_empty() or not _party_is_valid(profile):
+        return null
+    var canonical_entry_cost := int(quest.get("entry_stamina", 0))
+    if entry_cost < -1 or (entry_cost >= 0 and entry_cost != canonical_entry_cost):
         return null
     var party_snapshot := BattlePartySnapshotScript.build(profile, quest, run_id)
     if party_snapshot.is_empty():
@@ -42,6 +46,8 @@ func start_battle(profile: ProfileData, quest_id: String, run_id: String):
         return null
 
     var staged := ProfileDataScript.from_dict(profile.to_dict())
+    if canonical_entry_cost > 0 and not OfflineGameServiceScript.new().spend_stamina(staged, canonical_entry_cost, maxi(1, now_unix)):
+        return null
     staged.active_run = {
         "run_id": run_id,
         "quest_id": quest_id,
@@ -93,9 +99,12 @@ func abort_battle(profile: ProfileData) -> bool:
 func _party_is_valid(profile: ProfileData) -> bool:
     if profile.party.is_empty() or profile.party.size() > 3:
         return false
+    var seen: Dictionary = {}
     for character_id in profile.party:
         if not profile.roster.has(character_id):
             return false
+        if seen.has(character_id): return false
+        seen[character_id] = true
     return true
 
 func _result_id_for_run(run_id: String) -> String:

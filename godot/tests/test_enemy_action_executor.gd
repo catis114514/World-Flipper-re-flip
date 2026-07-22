@@ -24,6 +24,11 @@ func run(t) -> void:
         damage += executor.step(Vector2(360.0, 400.0), 16.0)
     t.assert_equal(damage, 27, "center N-way projectile deterministically hits the target once")
 
+    executor.projectiles.clear()
+    executor.projectiles.append({"position": Vector2.ZERO, "velocity": Vector2.ZERO, "remaining_frames": 2, "radius": 8.0, "damage": 10})
+    executor.projectiles.append({"position": Vector2.ZERO, "velocity": Vector2.ZERO, "remaining_frames": 2, "radius": 8.0, "damage": 20})
+    t.assert_equal(executor.step(Vector2.ZERO, 16.0), 20, "overlapping projectile ring applies only the strongest hit in one interval")
+
     executor.clear()
     var skill_id := "battle/action/enemy/action/general_boss/boss_slango$difficulity10_skill_shot1"
     t.assert_equal(executor.start_action(actions[skill_id], Vector2(360.0, 200.0), Vector2(360.0, 400.0), 30, 1.0), 30, "boss skill DSL creates five six-way rings")
@@ -37,7 +42,7 @@ func run(t) -> void:
     t.assert_equal(funnel_events[0]["enemy_id"], "slango", "funnel event keeps the canonical enemy id")
     t.assert_equal(funnel_events[0]["level"], 15, "funnel event keeps the canonical level")
 
-    var fragile_party := {"total_hp": 10, "total_atk": 30, "direct_attack_reference_atk": 30}
+    var fragile_party := {"total_hp": 1, "total_atk": 30, "direct_attack_reference_atk": 30}
     var battle = BattleSimulation.new(quest, "run-enemy-action", fragile_party)
     battle.enemy_action_frames_until_fire = 1
     battle.set_player_state(Vector2(360.0, 400.0), Vector2.ZERO)

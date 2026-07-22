@@ -22,19 +22,30 @@ func save(profile: ProfileData) -> Error:
         return FileAccess.get_open_error()
     temp_file.store_string(JSON.stringify(profile.to_dict()))
     temp_file.flush()
+    var write_error := temp_file.get_error()
     temp_file.close()
+    if write_error != OK:
+        DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_path))
+        return write_error
+    if _load_from_path(temp_path) == null:
+        DirAccess.remove_absolute(ProjectSettings.globalize_path(temp_path))
+        return ERR_FILE_CORRUPT
 
     var absolute_save := ProjectSettings.globalize_path(save_path)
     var absolute_temp := ProjectSettings.globalize_path(temp_path)
     var backup_path := save_path + ".bak"
     var absolute_backup := ProjectSettings.globalize_path(backup_path)
 
-    if FileAccess.file_exists(backup_path):
-        DirAccess.remove_absolute(absolute_backup)
     if FileAccess.file_exists(save_path):
-        var backup_error := DirAccess.rename_absolute(absolute_save, absolute_backup)
-        if backup_error != OK:
-            return backup_error
+        if _load_from_path(save_path) == null:
+            var remove_error := DirAccess.remove_absolute(absolute_save)
+            if remove_error != OK: return remove_error
+        else:
+            if FileAccess.file_exists(backup_path):
+                DirAccess.remove_absolute(absolute_backup)
+            var backup_error := DirAccess.rename_absolute(absolute_save, absolute_backup)
+            if backup_error != OK:
+                return backup_error
 
     var replace_error := DirAccess.rename_absolute(absolute_temp, absolute_save)
     if replace_error != OK:

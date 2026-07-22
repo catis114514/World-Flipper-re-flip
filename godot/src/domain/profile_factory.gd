@@ -11,7 +11,12 @@ static func create_default() -> ProfileData:
     profile.party = [141005, 121002, 131004]
     profile.currencies = {
         "free_vmoney": 1500,
+        "paid_vmoney": 0,
         "free_mana": 10000,
+        "paid_mana": 0,
+        "star_crumb": 0,
+        "bond_token": 0,
+        "exp_pool": 0,
     }
     profile.inventory = {}
     profile.equipment_inventory = {
@@ -27,6 +32,11 @@ static func create_default() -> ProfileData:
     profile.quest_progress = {}
     profile.active_run = {}
     profile.applied_result_ids = []
+    profile.rank_points = 0
+    profile.stamina_state = {"stored_value": 50, "heal_anchor_unix": 0}
+    profile.gacha_state = {"rng_state": 114514, "banners": {}}
+    profile.operation_ledger = {}
+    profile.inbox = []
     return profile
 
 static func _default_character_progress(unlocked_abilities: Array[String]) -> Dictionary:

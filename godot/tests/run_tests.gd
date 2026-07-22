@@ -35,6 +35,10 @@ func _initialize() -> void:
         preload("res://tests/test_enemy_action_executor.gd").new(),
         preload("res://tests/test_battle_session_service.gd").new(),
         preload("res://tests/test_main_scene.gd").new(),
+        preload("res://tests/test_quest_progression.gd").new(),
+        preload("res://tests/test_offline_catalog_repository.gd").new(),
+        preload("res://tests/test_offline_game_service.gd").new(),
+        preload("res://tests/test_playable_replay.gd").new(),
     ]
     for suite in suites:
         suite.run(self)

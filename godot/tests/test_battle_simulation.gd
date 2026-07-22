@@ -42,6 +42,8 @@ func run(t) -> void:
     t.assert_true(combat_battle.enemy_hp < hp_before_skill, "leader skill damages the active enemy")
     t.assert_equal(combat_battle.skill_slots[0]["skill_point"], 0, "skill activation consumes the full gauge")
     t.assert_true(not combat_battle.activate_skill(0), "empty skill gauge cannot activate twice")
+    combat_battle._record_movement_skill_points(20.0)
+    t.assert_equal(combat_battle.skill_slots[0]["skill_point"], 1, "ball travel contributes to the original movement-based skill gauge")
 
     var condition_battle = BattleSimulation.new(quest, "run-skill-conditions", {"total_atk": 30, "direct_attack_reference_atk": 30})
     condition_battle.enemy_actions_enabled = false
@@ -121,6 +123,12 @@ func run(t) -> void:
     var multiplier_before_additional := ability_battle._ability_direct_damage_multiplier()
     t.assert_true(ability_battle.activate_skill(0), "leader skill activates fever ability test")
     t.assert_equal(ability_battle.fever_points, 25, "skill-linked fever ability adds its recovered 0.25 value as 25 points")
+    ability_battle._add_fever_points(975)
+    t.assert_true(ability_battle.fever_active, "full fever gauge enters fever state")
+    t.assert_equal(ability_battle.fever_remaining_frames, 900, "fever uses the original 900-frame base duration")
+    for frame in range(900): ability_battle._step_fever()
+    t.assert_true(not ability_battle.fever_active, "fever ends after its duration")
+    t.assert_equal(ability_battle.fever_points, 0, "expired fever resets its gauge")
     ability_battle.skill_slots[0]["skill_point"] = ability_battle.skill_slots[0]["max_skill_point"]
     t.assert_true(ability_battle._ability_direct_damage_multiplier() > base_direct_multiplier, "skill-max additional attack ability extends direct impact damage")
 
