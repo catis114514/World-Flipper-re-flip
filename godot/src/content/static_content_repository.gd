@@ -193,8 +193,10 @@ func _validate_quest(quest: Dictionary) -> Error:
             if not point_value is Array or point_value.size() != 2: return ERR_INVALID_DATA
         if float(segment.get("restitution", -1.0)) < 0.0: return ERR_INVALID_DATA
     var markers: Dictionary = markers_value
-    for marker_name in ["p1", "p2", "p3"]:
-        var marker_value: Variant = markers.get(marker_name, [])
+    if markers.is_empty(): return ERR_INVALID_DATA
+    for marker_name in markers:
+        if str(marker_name).is_empty(): return ERR_INVALID_DATA
+        var marker_value: Variant = markers[marker_name]
         if not marker_value is Array or marker_value.size() != 2: return ERR_INVALID_DATA
 
     var enemies: Dictionary = quest["enemies"]
@@ -302,6 +304,12 @@ func _validate_quest(quest: Dictionary) -> Error:
             if not runtime_variant is Dictionary:
                 return ERR_INVALID_DATA
             var runtime: Dictionary = runtime_variant
+            var delay_value: Variant = runtime.get("delay_frames", 0)
+            if typeof(delay_value) not in [TYPE_INT, TYPE_FLOAT]:
+                return ERR_INVALID_DATA
+            var delay_frames := float(delay_value)
+            if delay_frames < 0.0 or not is_equal_approx(delay_frames, floorf(delay_frames)):
+                return ERR_INVALID_DATA
             var runtime_kind := str(runtime.get("kind", ""))
             if runtime_kind == "projectile":
                 if float(runtime.get("radius", 0.0)) <= 0.0 or float(runtime.get("speed_per_frame", 0.0)) <= 0.0:
@@ -365,6 +373,9 @@ func _validate_quest(quest: Dictionary) -> Error:
                     return ERR_INVALID_DATA
                 if str(termination.get("kind", "")) == "move":
                     if int(termination.get("fallback_frames", 0)) <= 0:
+                        return ERR_INVALID_DATA
+                    var target_name := str(termination.get("target", ""))
+                    if target_name.is_empty() or not markers.has(target_name):
                         return ERR_INVALID_DATA
                 elif int(termination.get("value", 0)) <= 0:
                     return ERR_INVALID_DATA

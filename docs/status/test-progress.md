@@ -179,7 +179,7 @@ ClientError 2274: ID: 141010のキャラクターの entry_count が存在しま
 | Converter tests | core fixture 2/2; offline catalog two-run byte determinism passed |
 | Windows release | `artifacts/windows/StarPointCNOffline.exe`, SHA-256 `50d0bb9160bd750901c7899bf8824eee32426eb35d16fe6f927b394d0be4f6e9` |
 
-Cataloging metadata does not imply complete battle conversion. Only quest `1001002` currently owns a validated full battle graph; missing CN terrain and animation files remain explicit compatibility gaps.
+At the 2026-07-22 batch boundary, only quest `1001002` owned a validated full battle graph; later sections supersede that battle-count limitation. Missing CN terrain and animation files remain explicit compatibility gaps.
 
 At the 2026-07-22 batch boundary, the main-scene flow followed `1001001` story summary → playable `1001002` battle → `1001003` story summary and then stopped at unconverted `1002001`. The next section supersedes that limitation.
 
@@ -202,7 +202,17 @@ Still non-parity: the original terrain/spawn coordinates and 90-frame spawn-poin
 - Zone 0 retains the independent 60-frame `slango` and 120-frame `spirit` emitters with a 22-kill objective. Zone 1 returns to the complete 36-state Slango boss cycle at canonical 12196 HP / 30 ATK and a 210-frame skill charge.
 - No quest-ID runtime behavior was added: the existing fixture, repository, multi-emitter simulation, Slango action/state machine, session, and progression boundaries handle the quest generically.
 - Main flow now continues through `1002002`, then story `1003001`, and blocks explicitly at unconverted battle `1003002`; replay selects the latest cleared fixture `1002002`.
-- Final gate: core converter 5/5; offline catalog determinism unchanged; Godot `PASS 556 assertions` twice from clean roots; three-battle flow, editor scan, 120-frame main-scene smoke, server-security regression, gacha-position regression, and runtime dependency audit pass.
+- Third-battle gate: core converter 5/5; offline catalog determinism unchanged; Godot `PASS 556 assertions` twice from clean roots; three-battle flow, editor scan, 120-frame main-scene smoke, server-security regression, gacha-position regression, and runtime dependency audit pass.
+
+## Godot Fourth Battle Expansion (2026-07-23)
+
+- Converted main battle `1003002` (`阳光透落的森林`) with deterministic fixture SHA-256 `80eaf928533f5f7c6dcf722b8d4c7376f3fc75ffa70a9893fd27db70a87c4918`.
+- Zone 0 runs three independent emitters: level-25 `slango` at 60 frames, `fox` at 120 frames, and `one_eyed_rabbit` at 150 frames, with a 20-kill objective.
+- Zone 1 uses the complete 37-state Fox boss cycle at 33911 HP / 51 ATK. Its skill preserves three 7+2 projectile waves at frames 0/12/24 instead of flattening Action DSL waits.
+- Delayed enemy waves resolve current owner/player positions at the due frame and are cancelled on owner, zone, or terminal teardown. Fox movement references validated `p0`-`p4` fallback markers while exact forest terrain remains unavailable.
+- Main flow now continues through `1003002`, then story `1004001`, and blocks explicitly at unconverted battle `1004002`; replay selects cleared `1003002`.
+- Final review replaced same-step relative countdowns with absolute due frames and made Action DSL `Wait` parsing fail closed for malformed shapes, non-integer values, and nested overflow.
+- Final gate: core converter 7/7; Godot `PASS 624 assertions` independently in each of two clean user-data roots; normal-input replay for all four converted fixtures; Godot editor scan; 120-frame native main-scene smoke; four-battle main-scene E2E; offline-catalog determinism; server-security regression; gacha-position regression; and runtime dependency audit all pass.
 
 ### Legacy compatibility-server hardening
 

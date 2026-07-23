@@ -43,6 +43,7 @@ func run(t) -> void:
     t.assert_equal(content_repository.load_fixture("res://content/fixtures/quest_1001002.json"), OK, "flow fixture loads")
     t.assert_equal(content_repository.load_fixture("res://content/fixtures/quest_1002001.json"), OK, "second flow fixture loads")
     t.assert_equal(content_repository.load_fixture("res://content/fixtures/quest_1002002.json"), OK, "third flow fixture loads")
+    t.assert_equal(content_repository.load_fixture("res://content/fixtures/quest_1003002.json"), OK, "fourth flow fixture loads")
     var session = BattleSessionService.new(save_repository, LocalProfileService.new(), content_repository)
     var profile = session.load_or_create_profile()
     t.assert_true(profile != null, "missing save creates local profile")
@@ -152,6 +153,20 @@ func run(t) -> void:
     t.assert_equal(third_restored.currencies["free_mana"], 10060, "third quest reward persists exactly once")
     t.assert_true(not session.finish_battle(third_restored, third_fixture_battle, "result-run-third-fixture"), "third quest result replay is rejected")
     t.assert_equal(third_restored.currencies["free_mana"], 10060, "replayed third result grants no duplicate reward")
+
+    var fourth_fixture_battle = session.start_battle(third_restored, "1003002", "run-fourth-fixture")
+    t.assert_true(fourth_fixture_battle != null, "fourth converted quest starts through the generic session boundary")
+    t.assert_equal(third_restored.active_run["quest_id"], "1003002", "fourth active run persists its own quest id")
+    fourth_fixture_battle.enemy_actions_enabled = false
+    BattleTestDriver.clear_quest(fourth_fixture_battle, 30000)
+    t.assert_equal(fourth_fixture_battle.status, "cleared", "fourth three-emitter quest clears through the session flow")
+    t.assert_true(session.finish_battle(third_restored, fourth_fixture_battle, "result-run-fourth-fixture"), "fourth quest result applies transactionally")
+    var fourth_restored = save_repository.load_profile()
+    t.assert_equal(int(fourth_restored.quest_progress["1003002"]["clear_count"]), 1, "fourth quest clear survives save reload")
+    t.assert_equal(fourth_restored.active_run, {}, "fourth finished run clears active state after reload")
+    t.assert_equal(fourth_restored.currencies["free_mana"], 10080, "fourth quest reward persists exactly once")
+    t.assert_true(not session.finish_battle(fourth_restored, fourth_fixture_battle, "result-run-fourth-fixture"), "fourth quest result replay is rejected")
+    t.assert_equal(fourth_restored.currencies["free_mana"], 10080, "replayed fourth result grants no duplicate reward")
 
     var progression_save_path := "user://tests/progression-result-sync.json"
     for suffix in ["", ".tmp", ".bak"]:

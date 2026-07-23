@@ -11,7 +11,7 @@
   - 581 server-projected reward pools, explicitly distinguished from CN banner metadata
 - Extended local profile to schema 6 with stamina anchor, rank points, RNG state, operation ledger, and inbox.
 - Implemented staged local operations for stamina, party, story progression, gacha and inbox rewards.
-- Home flow now resolves the original client order (latest released chapter -> latest viewable uncleared stage node -> first viewable uncleared quest): `1001001 story -> 1001002 battle -> 1001003 story`; unsupported `1002001` blocks explicitly and keeps `1001002` replayable.
+- At the 2026-07-22 baseline, the home flow resolved the original client order (latest released chapter -> latest viewable uncleared stage node -> first viewable uncleared quest): `1001001 story -> 1001002 battle -> 1001003 story`; unsupported `1002001` blocked explicitly and kept `1001002` replayable.
 - Added touch flippers, three touch skill buttons, CN bundled font, leader upgrade and compatible-party rotation.
 - Added fixed-step Fever duration, movement-based skill charging, outhole relaunch fallback, projectile hit-window handling, and reference-party HP damage scaling.
 - A fixed normal-input replay now clears the canonical quest with enemy actions enabled and without teleporting the ball.
@@ -19,12 +19,12 @@
 
 ## Explicit non-parity / unavailable inputs
 
-- Only `1001002` has a complete validated battle graph. The converter remains specialized to the recovered slango field/state/action graph; other battle quests are cataloged but not falsely marked playable.
+- At the 2026-07-22 baseline, only `1001002` had a complete validated battle graph; the follow-ups below supersede this battle-count limitation. Unconverted quests remain cataloged but are not falsely marked playable.
 - Original terrain collision AMF3, most CN CDN images/audio, and `.parts/.frame/.movie/.timeline` animation assets are unavailable in directly consumable form. The arena, outhole, some enemy timing, skill distance coefficient and presentation remain documented adapters.
 - The 581 reward pools are a server projection. CN master has 584 banner metadata rows; the missing three projected holiday pools are retained in metadata with `has_projected_pool=false`.
 - Android export is not validated because the VM has no Android SDK/JDK configuration. Windows release and native Linux headless runtime are validated.
 
-## Quality evidence
+## 2026-07-22 baseline quality evidence
 
 - `godot/tools/test_convert_core_fixture.py`: 2/2
 - `godot/tools/test_convert_offline_catalogs.py`: deterministic
@@ -47,11 +47,18 @@
 - The converter accepts `--quest-id` and uses explicit `slango`/`spirit` adapters; unknown enemy masters still fail closed.
 - Battle runtime supports one active enemy per emitter with independent serial/state/cooldown ownership. Quest `1002001` runs concurrent 60-frame `slango` and 120-frame `spirit` emitters, then the 31-state Spirit boss.
 - Progress now blocks at unconverted `1002002`; replay selects the latest cleared converted quest.
-- Current gate: core converter 5/5, Godot 518 assertions twice, two-battle scene flow, normal-input replay for both fixtures, editor scan, and 120-frame smoke.
+- Second-battle gate: core converter 5/5, Godot 518 assertions twice, two-battle scene flow, normal-input replay for both fixtures, editor scan, and 120-frame smoke.
 
 ## 2026-07-23 third-battle follow-up
 
 - The earlier `1002002` block is superseded: `追蘑菇2` now has a checked deterministic fixture and reuses the content-driven multi-emitter runtime without a quest-ID branch.
 - Its first zone runs the checked 60/120-frame Slango/Spirit emitters for 22 defeats; the second zone uses the canonical 12196-HP / 30-ATK, 36-state Slango boss.
 - Progress now continues through story `1003001` and blocks explicitly at unconverted `1003002`; replay selects cleared `1002002`.
-- Final gate: core converter 5/5, catalog determinism `ab9bfdbcd0600e752a31e2fed8d5705161608329964c2c7ca448de519e2a6ab6`, Godot 556 assertions twice, three-battle scene flow, editor/120-frame smoke, server/gacha regressions, and runtime dependency audit.
+- Third-battle gate: core converter 5/5, catalog determinism `ab9bfdbcd0600e752a31e2fed8d5705161608329964c2c7ca448de519e2a6ab6`, Godot 556 assertions twice, three-battle scene flow, editor/120-frame smoke, server/gacha regressions, and runtime dependency audit.
+
+## 2026-07-23 fourth-battle follow-up
+
+- The earlier `1003002` block is superseded: `阳光透落的森林` now has a checked fixture with Slango/Fox/Rabbit emitters and the complete Fox boss graph.
+- Enemy Action DSL waits are now absolute fixed-step due events rather than flattened data. Fox's delayed waves keep owner identity, resolve current firing-frame positions, and are cancelled during teardown; malformed/non-integer/overflowing Wait data fails conversion.
+- Progress now continues through story `1004001` and blocks explicitly at unconverted `1004002`; replay selects cleared `1003002`.
+- Final gate: core converter 7/7; Godot `PASS 624 assertions` independently in each of two clean user-data roots; normal-input replay for all four converted fixtures; Godot editor scan; 120-frame native main-scene smoke; four-battle main-scene E2E; offline-catalog determinism; server-security regression; gacha-position regression; and runtime dependency audit all pass.

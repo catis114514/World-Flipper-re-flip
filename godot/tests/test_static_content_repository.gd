@@ -7,9 +7,21 @@ func run(t) -> void:
     t.assert_equal(repository.load_fixture("res://content/fixtures/quest_1001002.json"), OK, "CN fixture loads")
     t.assert_equal(repository.load_fixture("res://content/fixtures/quest_1002001.json"), OK, "second CN fixture loads")
     t.assert_equal(repository.load_fixture("res://content/fixtures/quest_1002002.json"), OK, "third CN fixture loads")
+    t.assert_equal(repository.load_fixture("res://content/fixtures/quest_1003002.json"), OK, "fourth CN fixture loads")
     var quest: Dictionary = repository.get_quest("1001002")
     var second_quest: Dictionary = repository.get_quest("1002001")
     var third_quest: Dictionary = repository.get_quest("1002002")
+    var fourth_quest: Dictionary = repository.get_quest("1003002")
+    t.assert_equal(fourth_quest["name"], "阳光透落的森林", "fourth fixture keeps the canonical CN quest name")
+    t.assert_equal(fourth_quest["zones"][0]["objective"], {"kind": "zako_kill", "count": 20}, "fourth fixture keeps the twenty-zako objective")
+    t.assert_equal(fourth_quest["zones"][0]["zako_emitters"].size(), 3, "fourth fixture retains all three emitters")
+    t.assert_equal(fourth_quest["zones"][0]["zako_emitters"][2], {"enemy_id": "one_eyed_rabbit", "interval_frames": 150}, "rabbit emitter keeps its canonical interval")
+    t.assert_equal(fourth_quest["zones"][1]["bosses"], [{"enemy_id": "fox", "kind": "general_boss"}], "fourth fixture keeps the Fox boss")
+    t.assert_equal(fourth_quest["enemies"]["fox_boss"]["max_hp"], 33911, "fourth fixture applies canonical Fox boss HP")
+    t.assert_equal(fourth_quest["enemies"]["fox_boss"]["action_state_machine"]["states"].size(), 37, "Fox boss keeps its complete state cycle")
+    t.assert_true(fourth_quest["terrain_runtime"]["markers"].has("p0") and fourth_quest["terrain_runtime"]["markers"].has("p4"), "Fox movement fallback exposes every referenced marker")
+    var fox_skill_runtime: Array = fourth_quest["action_assets"].filter(func(action): return str(action["id"]).ends_with("boss_fox$difficulity10_skill_shot1"))[0]["runtime"]
+    t.assert_equal(fox_skill_runtime.map(func(runtime): return int(runtime.get("delay_frames", 0))), [0, 0, 12, 12, 24, 24], "Fox skill preserves its three delayed waves")
     t.assert_equal(third_quest["name"], "追蘑菇2", "third fixture keeps the canonical CN quest name")
     t.assert_equal(third_quest["zones"][0]["objective"], {"kind": "zako_kill", "count": 22}, "third fixture keeps the twenty-two-zako objective")
     t.assert_equal(third_quest["zones"][0]["zako_emitters"], second_quest["zones"][0]["zako_emitters"], "third fixture reuses the checked dual-emitter graph")
@@ -77,6 +89,20 @@ func run(t) -> void:
     var missing_marker := quest.duplicate(true)
     missing_marker["terrain_runtime"]["markers"].erase("p2")
     _assert_invalid_fixture(t, "missing-marker", missing_marker, "missing required terrain marker is rejected")
+
+    var missing_fox_marker := fourth_quest.duplicate(true)
+    missing_fox_marker["terrain_runtime"]["markers"].erase("p4")
+    _assert_invalid_fixture(t, "missing-fox-marker", missing_fox_marker, "missing state-referenced Fox marker is rejected")
+
+    var negative_enemy_delay := fourth_quest.duplicate(true)
+    for action in negative_enemy_delay["action_assets"]:
+        for runtime in action["runtime"]:
+            if int(runtime.get("delay_frames", 0)) > 0:
+                runtime["delay_frames"] = -1
+                break
+        if action["runtime"].any(func(runtime): return int(runtime.get("delay_frames", 0)) < 0):
+            break
+    _assert_invalid_fixture(t, "negative-enemy-delay", negative_enemy_delay, "negative enemy action delay is rejected")
 
     var malformed_segment := quest.duplicate(true)
     malformed_segment["terrain_runtime"]["segments"][0]["end"] = [1.0]

@@ -51,6 +51,9 @@ Multi-emitter battle ownership:
 - Each zako emitter owns at most one active enemy. Emitters update before skill/poison/collision damage each fixed step, so a death always starts the complete configured cooldown; one damage source must not shorten it by one frame.
 - The initial 90-frame original spawn-point subscription animation is not yet ported. Immediate first spawn and deterministic horizontal separation are explicit terrain/presentation adapters; independent 60/120-frame post-death cooldowns are authoritative fixture data.
 - Enemy projectiles and funnel spawn events retain their owner serial. Owner death removes only that owner's projectiles/funnels; zone/terminal teardown removes all instances.
+- Non-zero enemy Action DSL `Wait` values are retained as `delay_frames`. Due events resolve the owner's and player's current positions on the firing frame, matching the original retained Action DSL environment; owner/funnel/zone/terminal teardown cancels the corresponding queue entries.
+- Converter input accepts `Wait` only as a two-slot outer `Event` containing an exact four-slot wait record. Its frame value is a non-boolean JSON integer in `0..2^53-1`, and the accumulated nested delay must remain in that range; floats, strings, extra/missing slots, and overflow fail closed.
+- Pending enemy actions own an absolute `due_frame = elapsed_frames + delay_frames`. The main fixed-step loop may schedule and inspect the queue in the same step, so decrementing a newly queued relative counter in that step is forbidden: it makes a `Wait 12` wave fire on relative frame 11.
 - Delayed player events snapshot enemy and funnel serials at cast time. They never acquire a later spawn or a new zone generation, and terminal state clears the remaining event queue.
 - Legacy fields (`enemy`, `enemy_hp`, `enemy_state_id`, and related diagnostics) are a compatibility view of one primary active instance. New simulation/presentation code consumes `get_enemy_snapshots()` as the authoritative multi-entity boundary.
 
@@ -63,7 +66,7 @@ Multi-emitter battle ownership:
 | Zone references missing enemy | `ERR_INVALID_DATA` |
 | Enemy references missing action DSL record | `ERR_INVALID_DATA` |
 | `SpawnFunnel` runtime has no matching `kind=funnel` definition | `ERR_INVALID_DATA` |
-| Enemy Action DSL uses a delayed supported command before runtime scheduling exists | converter exits non-zero; never flatten the wait silently |
+| Enemy Action DSL delay is negative, non-integer-typed, above `2^53-1`, cumulatively overflowing, or structurally malformed | converter exits non-zero; fixture loading rejects invalid normalized values and runtime never flattens valid waits |
 | Quest references an enemy without an explicit adapter registry entry | converter exits non-zero |
 | Empty/malformed normalized action runtime, projectile distribution, enemy ATK, or schedule | `ERR_INVALID_DATA` |
 | Source file missing during conversion | converter exits non-zero |
@@ -77,19 +80,21 @@ Multi-emitter battle ownership:
 
 - Good: deterministic conversion produces byte-identical fixture; all graph references validate; clear result matches active run and persists once; the live profile equals the saved staged profile.
 - Base: terrain is unavailable, so documented fallback geometry is allowed while the canonical multi-zone objective/enemy flow remains authoritative.
-- Bad: using only `zako_emitters[0]`, sharing one HP/condition/action slot across concurrent enemies, letting delayed skills hit later spawns, a generic enemy ID, guessed HP presented as canonical, unmarked fallback coordinates, raw dictionaries edited by UI, result IDs derived from `Time.get_ticks_msec()`, or a service hand-copying only selected profile fields after save.
+- Bad: using only `zako_emitters[0]`, sharing one HP/condition/action slot across concurrent enemies, flattening enemy waits, snapshotting a delayed enemy projectile's aim at action start, letting delayed player skills hit later spawns, a generic enemy ID, guessed HP presented as canonical, unmarked fallback coordinates, raw dictionaries edited by UI, result IDs derived from `Time.get_ticks_msec()`, or a service hand-copying only selected profile fields after save.
 
 ## 6. Tests Required
 
-- Converter golden byte comparison and two-run determinism.
+- Converter golden byte comparison and two-run determinism; malformed outer/inner event shapes, negative, float, boolean, string, null, non-finite, out-of-range, and cumulatively overflowing Action DSL wait values must fail conversion rather than being coerced.
 - Canonical ID/hash/HP assertions for the selected quest.
 - Missing enemy, missing action, missing required field, duplicate ID, and malformed type rejection.
 - Fixed-step collision tests must distinguish approaching impact from separating overlap and expose normal impact speed.
 - Simulation regression: quest `1001002` remains 18 single-emitter zakos with 60-frame respawns followed by the 13009-HP boss; timeout terminal states produce no result.
 - Multi-emitter regression: quest `1002001` starts one `slango` and one `spirit`, retains independent 60/120-frame emitter cooldowns, counts exactly 20 objective deaths, then activates the 18295-HP Spirit boss with its 31-state cycle.
 - Content-reuse regression: quest `1002002` uses the same independent 60/120-frame emitters for exactly 22 objective deaths, then activates the 12196-HP Slango boss with its 36-state cycle and 210-frame skill charge. This must be fixture-driven, not a quest-ID runtime branch.
+- Three-emitter regression: quest `1003002` starts `slango`/`fox`/`one_eyed_rabbit` with 60/120/150-frame cooldowns, counts exactly 20 objective deaths, then activates the 33911-HP Fox boss with its 37-state cycle and 300-frame skill charge.
 - Ownership regression: serials change on respawn; killing one enemy leaves the other emitter active; owner teardown removes only owned projectiles/funnels; delayed skills cannot hit enemies/funnels created after cast time.
 - Timing regression: poison/delayed-skill deaths start a full emitter cooldown, and a terminal ready event prevents remaining same-frame condition events from mutating cleared/failed state.
+- Enemy-wait regression: Fox skill fires 7+2 projectiles at frames 0, 12, and 24; an integrated `BattleSimulation.step()` test must prove frame 12 does not fire on frame 11, because helper-only queue tests do not expose same-step scheduling errors. Delayed waves read current owner/target positions, preserve record order, and disappear when the owner is removed.
 - Action regression: the four checked DSL assets normalize to exact projectile/funnel parameters; N-way and circle patterns are deterministic; canonical enemy ATK (19/30) and attack multipliers damage party HP; zero HP terminates with `party_defeated` and no result.
 - State regression: the 36-state `slango` boss cycle preserves unconditional next-state links and time/loop/move termination metadata, invokes funnel/shot/skill only from their canonical fire states, and uses explicitly marked fallback frames only for movement states whose terrain markers are unavailable.
 - Funnel regression: the level-15 funnel uses canonical 132 HP / 23 ATK evidence, persists while its owner is active, orbits deterministically, fires the canonical zako shot on its configured boundary, and is removed with the owner.
@@ -97,7 +102,7 @@ Multi-emitter battle ownership:
 - Transaction replacement regression: a staged result that changes character progress and equipment inventory must update both the live profile and the reloaded save.
 - Party snapshot regression: canonical CN level-one stats total to 162 HP / 30 ATK, missing selected definitions reject start, profile edits do not mutate a running snapshot, and attack scaling is deterministic.
 - Save/reload/idempotency and interrupted-run abort tests.
-- Main-flow regression advances through converted `1002002`, completes story `1003001`, blocks explicitly at unconverted `1003002`, and keeps the latest cleared fixture replayable.
+- Main-flow regression advances through converted `1003002`, completes story `1004001`, blocks explicitly at unconverted `1004002`, and keeps the latest cleared fixture replayable.
 - Two clean user-data headless runs, editor scan, main-scene smoke, and Windows export.
 
 ## 7. Wrong vs Correct
@@ -132,11 +137,32 @@ target.quest_progress = staged.quest_progress.duplicate(true)
 target.replace_from(staged)
 ```
 
+Delayed enemy scheduling:
+
+```gdscript
+# Wrong: a Wait 12 queued earlier in this step is immediately reduced to 11.
+event["frames_remaining"] = int(event["frames_remaining"]) - 1
+
+# Correct: compare against the absolute simulation frame on which it is due.
+pending_enemy_action_events.append({
+    "due_frame": elapsed_frames + delay_frames,
+    "runtime": runtime.duplicate(true),
+})
+if elapsed_frames >= int(event["due_frame"]):
+    _start_enemy_action_runtime(
+        event["runtime"],
+        int(event["source_serial"]),
+        int(event["enemy_atk"]),
+        float(event["quest_correction"]),
+        int(event["reference_party_hp"]),
+    )
+```
+
 Terrain runtime additions:
 
 - `terrain_runtime.status` is either `fallback` or `recovered`.
 - `terrain_runtime.segments[]` owns validated IDs, two-point endpoints, and restitution; simulation converts these once at its content boundary.
-- `terrain_runtime.markers` must include `p1`, `p2`, and `p3`; boss move states resolve only these shared markers rather than embedding presentation coordinates.
+- `terrain_runtime.markers` owns validated two-number coordinates; every boss move-state target must resolve to one of these shared markers rather than embedding presentation coordinates. Missing fallback entries fail conversion or fixture loading.
 - Segment contacts correct penetration for both approaching and separating overlap, but reflect and report normal impact speed only while approaching.
 - Fallback coordinates must remain explicitly labeled and must be replaced by recovered terrain data rather than presented as canonical geometry.
 Damageable funnel contract:
@@ -179,7 +205,7 @@ Playable fallback loop:
 - Enemy projectile rings honor one damage application per fixed-step hit interval. Overlapping projectiles in the same ring/window apply the strongest hit, never the sum of every overlap.
 - Enemy raw attack values are scaled from the recovered `atk_formula.party_hp_level_1` reference to the actual snapshotted party max HP, preserving intended damage percentage rather than treating the reference-party raw value as absolute damage.
 - Player skill gauges gain from ball travel distance as in the AS3 member update; the current conversion factor is an explicit deterministic adapter until the exact distance coefficient is recovered.
-- A fixed input replay must clear `1001002` with enemy actions enabled, skills activated through normal gauge readiness, and no direct position/HP mutation by the test.
+- Fixed input replays must clear every registered converted fixture, including `1003002`, with enemy actions enabled, skills activated through normal gauge readiness, and no direct position/HP mutation by the test.
 Save schema 2 progression contract:
 
 - `character_progress[character_id]` owns level, EXP, ability levels, and `{weapon_id,soul_id}`.

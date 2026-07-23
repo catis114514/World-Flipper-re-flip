@@ -26,14 +26,25 @@ from typing import Any, Callable
 DEFAULT_QUEST_ID = "1001002"
 CATEGORY = 1
 ASSET_SALT = "K6R9T9Hz22OpeIGEWB0ui6c6PYFQnJGy"
+MAX_ACTION_DELAY_FRAMES = (1 << 53) - 1
 ELEMENT_NAMES = ["fire", "water", "thunder", "wind", "light", "dark"]
 DEFAULT_PARTY_IDS = ["141005", "121002", "131004"]
 DEFAULT_EQUIPMENT_IDS = ["1010001", "100001"]
 GENERAL_BOSS_VARIABLE_PATH = Path("orderedmap/battle/boss/general_boss_variable.json")
 
 GENERAL_ENEMY_ADAPTERS = {
+    "fox": {"state_difficulty": "1"},
+    "one_eyed_rabbit": {"state_difficulty": "1"},
     "slango": {"state_difficulty": "1"},
     "spirit": {"state_difficulty": "1"},
+}
+
+FALLBACK_TERRAIN_MARKERS = {
+    "p0": [360.0, 300.0],
+    "p1": [220.0, 300.0],
+    "p2": [500.0, 300.0],
+    "p3": [360.0, 220.0],
+    "p4": [360.0, 140.0],
 }
 
 PARTY_ATK_CURVE_PATH = "master/battle/enemy/party/party_atk_curve_iosbundled.orderedmap"
@@ -426,23 +437,24 @@ def normalize_projectile_pattern(command: list[Any]) -> dict[str, Any]:
 def normalize_action_runtime(data: Any) -> list[dict[str, Any]]:
     runtime: list[dict[str, Any]] = []
     for delay_frames, command in iter_action_commands_with_delay(data):
-        if command[0] in {"CreateHitArea", "SpawnFunnel"} and delay_frames != 0:
-            raise ValueError(
-                f"delayed enemy action command requires runtime scheduling support: "
-                f"{command[0]} at frame {delay_frames}"
-            )
         if command[0] == "CreateHitArea":
-            runtime.append(normalize_projectile_pattern(command))
+            record = normalize_projectile_pattern(command)
+            if delay_frames > 0:
+                record["delay_frames"] = delay_frames
+            runtime.append(record)
         elif command[0] == "SpawnFunnel":
             target = command[1]
             group = command[3]
-            runtime.append({
+            record = {
                 "kind": "spawn_funnel",
                 "enemy_kind": str(target[0]).lower(),
                 "enemy_id": str(target[1]),
                 "level": int(command[2]),
                 "group_id": int(group[1]),
-            })
+            }
+            if delay_frames > 0:
+                record["delay_frames"] = delay_frames
+            runtime.append(record)
     return runtime
 
 
@@ -468,13 +480,31 @@ def action_asset_record(wf_assets_root: Path, logical_path: str) -> tuple[dict[s
 
 
 
+def wait_frame_count(value: Any) -> int:
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ValueError(f"invalid Wait frame count: {value!r}")
+    if value < 0 or value > MAX_ACTION_DELAY_FRAMES:
+        raise ValueError(f"invalid Wait frame count: {value!r}")
+    return value
+
+
 def iter_action_commands_with_delay(node: Any, delay_frames: int = 0):
+    delay_frames = wait_frame_count(delay_frames)
     if not isinstance(node, list):
         return
-    if len(node) == 2 and node[0] == "Event" and isinstance(node[1], list):
+    if node and node[0] == "Event":
+        if len(node) != 2 or not isinstance(node[1], list):
+            raise ValueError(f"malformed Event node: {node!r}")
         event = node[1]
-        if event and event[0] == "Wait" and len(event) > 3:
-            yield from iter_action_commands_with_delay(event[3], delay_frames + int(event[1]))
+        if event and event[0] == "Wait":
+            if len(event) != 4 or not isinstance(event[3], list):
+                raise ValueError(f"malformed Wait event: {event!r}")
+            nested_delay = wait_frame_count(event[1])
+            if delay_frames > MAX_ACTION_DELAY_FRAMES - nested_delay:
+                raise ValueError(
+                    f"invalid Wait frame count after nesting: {delay_frames}+{nested_delay}"
+                )
+            yield from iter_action_commands_with_delay(event[3], delay_frames + nested_delay)
             return
     if len(node) == 2 and node[0] == "Command" and isinstance(node[1], list):
         yield delay_frames, node[1]
@@ -1169,6 +1199,25 @@ def build_fixture(
                 "action_state_machine": boss_state_machine,
             }
 
+    terrain_markers = {
+        marker_name: marker_position.copy()
+        for marker_name, marker_position in FALLBACK_TERRAIN_MARKERS.items()
+        if marker_name in {"p1", "p2", "p3"}
+    }
+    for enemy_definition in enemies.values():
+        state_machine = enemy_definition.get("action_state_machine", {})
+        for state in state_machine.get("states", {}).values():
+            termination = state.get("termination", {})
+            if termination.get("kind") != "move":
+                continue
+            marker_name = str(termination.get("target", ""))
+            if marker_name not in FALLBACK_TERRAIN_MARKERS:
+                raise ValueError(f"missing fallback terrain marker: {marker_name}")
+            terrain_markers.setdefault(
+                marker_name,
+                FALLBACK_TERRAIN_MARKERS[marker_name].copy(),
+            )
+
     terrain_logical_path = f"{terrain_asset}.amf3.deflate"
     terrain_hashed_path = hashed_asset_path(terrain_logical_path)
     terrain_bundle_entry = f"production/android_bundle/{terrain_hashed_path}"
@@ -1293,7 +1342,7 @@ def build_fixture(
                 {"id": "lower-left-slope", "start": [80.0, 1040.0], "end": [250.0, 1120.0], "restitution": 0.9},
                 {"id": "lower-right-slope", "start": [470.0, 1120.0], "end": [640.0, 1040.0], "restitution": 0.9},
             ],
-            "markers": {"p1": [220.0, 300.0], "p2": [500.0, 300.0], "p3": [360.0, 220.0]},
+            "markers": terrain_markers,
         },
         "enemy": {
             "id": representative_enemy_id,

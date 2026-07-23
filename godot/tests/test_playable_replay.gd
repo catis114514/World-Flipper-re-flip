@@ -28,6 +28,13 @@ func run(t) -> void:
     t.assert_equal(third_battle.status_reason, "boss_defeated", "third playable replay clears by defeating Slango")
     t.assert_true(third_battle.enemy_spawn_serial > 22, "third replay exercises both emitters, respawns, and the boss")
 
+    t.assert_equal(repository.load_fixture("res://content/fixtures/quest_1003002.json"), OK, "fourth playable replay fixture loads")
+    var fourth_quest := repository.get_quest("1003002")
+    var fourth_battle = _drive_replay(fourth_quest, "playable-replay-fourth")
+    t.assert_equal(fourth_battle.status, "cleared", "normal input clears the three-emitter Fox quest")
+    t.assert_equal(fourth_battle.status_reason, "boss_defeated", "fourth playable replay clears by defeating Fox")
+    t.assert_true(fourth_battle.enemy_spawn_serial > 20, "fourth replay exercises three emitters, respawns, and the boss")
+
 func _drive_replay(quest: Dictionary, run_id: String):
     var snapshot := BattlePartySnapshot.build(ProfileFactory.create_default(), quest, run_id)
     var battle = BattleSimulation.new(quest, run_id, snapshot)

@@ -34,22 +34,44 @@ func start_action(
         if not runtime_variant is Dictionary:
             continue
         var runtime: Dictionary = runtime_variant
-        var kind := str(runtime.get("kind", ""))
-        if kind == "projectile":
-            created += _spawn_projectile_pattern(
-                runtime,
-                origin,
-                target,
-                enemy_atk,
-                quest_correction,
-                source_serial,
-                reference_party_hp
-            )
-        elif kind == "spawn_funnel":
-            var spawn_event: Dictionary = runtime.duplicate(true)
-            spawn_event["source_serial"] = source_serial
-            spawn_events.append(spawn_event)
+        if int(runtime.get("delay_frames", 0)) > 0:
+            continue
+        created += start_runtime(
+            runtime,
+            origin,
+            target,
+            enemy_atk,
+            quest_correction,
+            source_serial,
+            reference_party_hp
+        )
     return created
+
+func start_runtime(
+    runtime: Dictionary,
+    origin: Vector2,
+    target: Vector2,
+    enemy_atk: int,
+    quest_correction: float,
+    source_serial: int = 0,
+    reference_party_hp: int = 0
+) -> int:
+    var kind := str(runtime.get("kind", ""))
+    if kind == "projectile":
+        return _spawn_projectile_pattern(
+            runtime,
+            origin,
+            target,
+            enemy_atk,
+            quest_correction,
+            source_serial,
+            reference_party_hp
+        )
+    if kind == "spawn_funnel":
+        var spawn_event: Dictionary = runtime.duplicate(true)
+        spawn_event["source_serial"] = source_serial
+        spawn_events.append(spawn_event)
+    return 0
 
 func step(player_position: Vector2, player_radius: float, player_max_hp: int = 0) -> int:
     var damage := 0

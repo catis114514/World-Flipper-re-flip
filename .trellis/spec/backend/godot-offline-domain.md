@@ -63,7 +63,7 @@ python3 godot/tools/convert_offline_catalogs.py
 - Schema v0 migrates through v6 and round-trips all new dictionaries.
 - Stamina settlement/spend and battle-start atomic deduction.
 - Party ownership, uniqueness, and order.
-- Fresh profile resolves `1001001`; story completion resolves `1001002`; clearing it and completing `1001003` resolves `1002001`; clearing `1002001` resolves `1002002`; clearing it resolves story `1003001`; completing that story exposes unsupported `1003002` while replay remains on cleared `1002002`.
+- Fresh profile resolves `1001001`; story completion resolves `1001002`; clearing it and completing `1001003` resolves `1002001`; clearing `1002001` resolves `1002002`; clearing it and completing `1003001` resolves `1003002`; clearing it resolves story `1004001`; completing that story exposes unsupported `1004002` while replay remains on cleared `1003002`.
 - Gacha returns exactly 1/10 items, tenth draw is 4-star-or-higher, cost is charged once, RNG state persists, repeated operation IDs return the same result, and `play_movie` exists per position.
 - Inbox unique grant, atomic claim, idempotent replay, and overflow rejection.
 - Scene exposes keyboard/mouse and touch skill controls.

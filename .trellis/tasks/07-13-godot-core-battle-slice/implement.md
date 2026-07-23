@@ -57,13 +57,13 @@ Rollback point: simulation remains independent of Godot nodes; presentation work
 
 ## 7. Full Offline Verification
 
-- [x] Run all headless tests twice from a clean user-data test directory.
+- [x] Run all headless tests independently in each of two clean user-data roots.
 - [x] Verify network independence by running with network unavailable and searching runtime code for HTTP/CDN/Node/AIR dependencies.
 - [x] Verify clear reward persists once across restart and interrupted-run recovery cannot duplicate it.
 - [ ] Launch the Windows project interactively and complete the selected quest.
 - [x] Run `trellis-check`, perform code review, update relevant specs, and record remaining parity gaps before expanding scope.
 
-## Latest Verification (2026-07-21)
+## Verification Snapshot (2026-07-21)
 
 - Python converter tests: 2 passed. The damaged VM APK input was replaced from the read-only host source after SHA-256 and ZIP integrity verification.
 - Godot headless suite: 366 assertions passed twice from clean user-data directories.
@@ -72,7 +72,7 @@ Rollback point: simulation remains independent of Godot nodes; presentation work
 - Windows debug and release exports succeeded inside `wf-vm`; interactive Windows playthrough remains pending.
 - Terrain runtime adapter now includes validated fallback segments and p1/p2/p3 markers, deterministic segment collision, marker-driven boss movement, and functional rendering. Exact recovered terrain and interactive Windows verification remain pending.
 
-## Latest Verification (2026-07-23, second converted battle)
+## Verification Snapshot (2026-07-23, second converted battle)
 
 - `convert_core_fixture.py` accepts `--quest-id`; `1001002` remains byte-identical and `1002001` now has a checked schema-2 fixture.
 - Added explicit `slango`/`spirit` adapters, complete 31-state Spirit boss conversion, level-threshold `charge1=240`, five checked enemy Action DSL assets, and fixed-point funnel dependency validation.
@@ -82,13 +82,22 @@ Rollback point: simulation remains independent of Godot nodes; presentation work
 - Verification: core converter 5/5; offline catalog determinism unchanged; server-security and gacha-position regressions pass; Godot 518 assertions twice from clean data roots; two-battle scene flow, editor scan, and 120-frame main-scene smoke pass.
 - Exact terrain/spawn animation, broad enemy adapter coverage, original visual assets, and interactive Windows verification remain pending.
 
-## Latest Verification (2026-07-23, third converted battle)
+## Verification Snapshot (2026-07-23, third converted battle)
 
 - Added checked fixture `1002002` (`追蘑菇2`) without a quest-specific runtime branch. It reuses the existing 60/120-frame Slango/Spirit emitters for a 22-kill objective, then activates the canonical 12196-HP / 30-ATK Slango boss and complete 36-state cycle.
 - Registered the fixture through the existing content boundary and extended repository, simulation, session, progression, presentation, normal-input replay, and main-scene flow regressions.
 - Main progression now runs `1001001 story -> 1001002 battle -> 1001003 story -> 1002001 battle -> 1002002 battle -> 1003001 story`; unsupported `1003002` blocks explicitly while replay selects `1002002`.
 - Verification: core converter 5/5; offline catalog determinism unchanged; `1002002` fixture SHA-256 `e46b5e39381b935ca56d535e1417ab1b5628aa6598e84aac514b48fbf232fdb8`; Godot 556 assertions twice from clean data roots; three-battle scene flow, editor scan, 120-frame main-scene smoke, server-security regression, gacha-position regression, and runtime dependency audit pass.
 - Final diff review found no quest-ID runtime branch, duplicate helper, speculative API, broad fallback, debug residue, or unresolved cross-layer contract. Exact terrain/spawn animation, broad enemy adapter coverage, original visual assets, and interactive Windows verification remain pending overall.
+
+## Final Verification (2026-07-23, fourth converted battle)
+
+- Added checked fixture `1003002` (`阳光透落的森林`): level-25 Slango/Fox/one-eyed-rabbit emitters at 60/120/150 frames, a 20-kill objective, then the canonical 33911-HP / 51-ATK Fox boss and complete 37-state cycle.
+- Added explicit `fox`/`one_eyed_rabbit` adapters. Earlier three fixture hashes remain byte-identical; Fox adds state-referenced fallback markers `p0`/`p4` without changing older marker payloads.
+- Enemy Action DSL now retains non-zero `Wait` frames. Fox's six skill patterns execute as 7+2 waves at frames 0/12/24 through absolute due frames, resolve current owner/player positions on the due frame, and are cancelled by owner/zone/terminal teardown. Conversion rejects malformed node shapes, non-integer values, and nested delay overflow.
+- Main progression now runs through `1003002`, then story `1004001`; unsupported `1004002` blocks explicitly while replay selects `1003002`.
+- Final verification: core converter 7/7; fixture SHA-256 `80eaf928533f5f7c6dcf722b8d4c7376f3fc75ffa70a9893fd27db70a87c4918`; Godot `PASS 624 assertions` independently in each of two clean user-data roots; normal-input replay for all four fixtures and the four-battle main-scene E2E passed.
+- Godot editor scan, 120-frame native main-scene smoke, server-security regression, gacha-position regression, offline-catalog determinism, and runtime dependency audit passed. Final review found and fixed a frame-11 early-fire bug plus invalid `Wait` coercion, with focused regressions added before this full rerun.
 
 ## Risky Areas
 

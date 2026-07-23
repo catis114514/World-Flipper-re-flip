@@ -7,6 +7,7 @@ const EnemyActionExecutor = preload("res://src/simulation/enemy_action_executor.
 func run(t) -> void:
     var repository = StaticContentRepository.new()
     t.assert_equal(repository.load_fixture("res://content/fixtures/quest_1001002.json"), OK, "enemy action fixture loads")
+    t.assert_equal(repository.load_fixture("res://content/fixtures/quest_1003002.json"), OK, "delayed Fox action fixture loads")
     var quest: Dictionary = repository.get_quest("1001002")
     var actions := {}
     for action_variant in quest["action_assets"]:
@@ -60,6 +61,97 @@ func run(t) -> void:
     t.assert_equal(battle.build_result("result-defeated"), {}, "defeated party produces no clear result")
 
     var durable_party := {"total_hp": 999999, "total_atk": 30, "direct_attack_reference_atk": 30}
+    var fox_quest: Dictionary = repository.get_quest("1003002")
+    var fox_actions := {}
+    for action_variant in fox_quest["action_assets"]:
+        var fox_action: Dictionary = action_variant
+        fox_actions[str(fox_action["id"])] = fox_action
+    var fox_skill_id := "battle/action/enemy/action/general_boss/boss_fox$difficulity10_skill_shot1"
+    executor.clear()
+    t.assert_equal(executor.start_action(fox_actions[fox_skill_id], Vector2(120.0, 300.0), Vector2(520.0, 300.0), 51, 1.0), 9, "starting the Fox skill emits only its frame-zero waves")
+    t.assert_equal(executor.projectiles.size(), 9, "delayed Fox waves are not flattened into immediate projectiles")
+
+    var timing_battle = BattleSimulation.new(fox_quest, "run-integrated-fox-timing", durable_party)
+    timing_battle._enter_zone(1)
+    timing_battle.action_executor.clear()
+    var timing_serial := int(timing_battle.get_progress_snapshot()["enemies"][0]["serial"])
+    var timing_actor: Dictionary = timing_battle._find_enemy_instance(timing_serial)
+    timing_actor["state_machine"] = {}
+    timing_actor["action_sequence"] = [fox_skill_id]
+    timing_actor["action_index"] = 0
+    timing_actor["action_frames_until_fire"] = 1
+    var timing_definition: Dictionary = timing_actor["definition"].duplicate(true)
+    timing_definition["action_schedule"] = {"interval_frames": 10000}
+    timing_actor["definition"] = timing_definition
+    timing_battle.enemy_action_frames_until_fire = 1
+    timing_battle.set_player_state(Vector2(520.0, 300.0), Vector2.ZERO)
+    timing_battle.step()
+    t.assert_equal(timing_battle.pending_enemy_action_events.size(), 4, "integrated Fox action queues its delayed waves")
+    for frame in range(11):
+        timing_battle.set_player_state(Vector2(520.0, 300.0), Vector2.ZERO)
+        timing_battle.step()
+    t.assert_equal(timing_battle.pending_enemy_action_events.size(), 4, "integrated frame-12 Fox wave does not fire on frame 11")
+    timing_battle.set_player_state(Vector2(520.0, 300.0), Vector2.ZERO)
+    timing_battle.step()
+    t.assert_equal(timing_battle.pending_enemy_action_events.size(), 2, "integrated frame-12 Fox wave fires on frame 12")
+
+    var delayed_battle = BattleSimulation.new(fox_quest, "run-delayed-fox-action", durable_party)
+    delayed_battle._enter_zone(1)
+    delayed_battle.enemy_actions_enabled = false
+    delayed_battle.action_executor.clear()
+    var fox_serial := int(delayed_battle.get_progress_snapshot()["enemies"][0]["serial"])
+    var fox_actor: Dictionary = delayed_battle._find_enemy_instance(fox_serial)
+    var fox_body = fox_actor["body"]
+    fox_body.position = Vector2(120.0, 300.0)
+    delayed_battle.set_player_state(Vector2(520.0, 300.0), Vector2.ZERO)
+    delayed_battle._invoke_enemy_action(fox_actor, fox_skill_id)
+    t.assert_equal(delayed_battle.action_executor.projectiles.size(), 9, "Fox skill creates the frame-zero 7+2 projectiles immediately")
+    t.assert_equal(delayed_battle.pending_enemy_action_events.size(), 4, "Fox skill queues its two frame-12 and two frame-24 patterns")
+    for frame in range(11):
+        delayed_battle.elapsed_frames += 1
+        delayed_battle._step_pending_enemy_action_events()
+    t.assert_equal(delayed_battle.action_executor.projectiles.size(), 9, "frame-12 Fox wave does not fire one frame early")
+    fox_body.position = Vector2(180.0, 360.0)
+    var moved_player_position: Vector2 = Vector2(540.0, 480.0)
+    delayed_battle.set_player_state(moved_player_position, Vector2.ZERO)
+    delayed_battle.elapsed_frames += 1
+    delayed_battle._step_pending_enemy_action_events()
+    t.assert_equal(delayed_battle.action_executor.projectiles.size(), 18, "frame-12 Fox wave adds its canonical 7+2 projectiles")
+    t.assert_equal(delayed_battle.action_executor.projectiles[12]["position"], fox_body.position, "delayed Fox wave reads the owner's current position")
+    var expected_aim: Vector2 = (moved_player_position - Vector2(fox_body.position)).normalized()
+    var actual_aim: Vector2 = Vector2(delayed_battle.action_executor.projectiles[12]["velocity"]).normalized()
+    t.assert_near(actual_aim.x, expected_aim.x, 0.000001, "delayed Fox wave reads the player's current horizontal aim")
+    t.assert_near(actual_aim.y, expected_aim.y, 0.000001, "delayed Fox wave reads the player's current vertical aim")
+    for frame in range(11):
+        delayed_battle.elapsed_frames += 1
+        delayed_battle._step_pending_enemy_action_events()
+    t.assert_equal(delayed_battle.action_executor.projectiles.size(), 18, "frame-24 Fox wave does not fire one frame early")
+    delayed_battle.elapsed_frames += 1
+    delayed_battle._step_pending_enemy_action_events()
+    t.assert_equal(delayed_battle.action_executor.projectiles.size(), 27, "frame-24 Fox wave adds its canonical 7+2 projectiles")
+    t.assert_equal(delayed_battle.pending_enemy_action_events.size(), 0, "all Fox skill waves leave no stale pending event")
+    delayed_battle._invoke_enemy_action(fox_actor, fox_skill_id)
+    t.assert_equal(delayed_battle.pending_enemy_action_events.size(), 4, "a repeated Fox skill queues a fresh delayed sequence")
+    delayed_battle._deactivate_enemy_instance(fox_serial)
+    t.assert_equal(delayed_battle.pending_enemy_action_events.size(), 0, "enemy teardown cancels its delayed Fox waves")
+
+    var fox_state_battle = BattleSimulation.new(fox_quest, "run-fox-state-cycle", durable_party)
+    fox_state_battle._enter_zone(1)
+    var fox_states_seen := {}
+    var left_fox_neutral := false
+    var fox_cycle_frames := 0
+    while fox_state_battle.status == "running" and fox_cycle_frames < 4000:
+        fox_states_seen[fox_state_battle.enemy_state_id] = true
+        if fox_state_battle.enemy_state_id != "neutral1":
+            left_fox_neutral = true
+        fox_state_battle.step()
+        fox_cycle_frames += 1
+        if left_fox_neutral and fox_state_battle.enemy_state_id == "neutral1":
+            break
+    t.assert_true(fox_cycle_frames < 4000, "Fox state machine completes one full cycle")
+    t.assert_equal(fox_states_seen.size(), 37, "Fox cycle visits every canonical state")
+    t.assert_equal(fox_state_battle.status, "running", "Fox p0-p4 fallback movement does not fail the battle")
+
     var state_battle = BattleSimulation.new(quest, "run-boss-state-machine", durable_party)
     state_battle._enter_zone(1)
     t.assert_equal(state_battle.enemy_state_id, "neutral1", "boss starts in its canonical neutral1 state")

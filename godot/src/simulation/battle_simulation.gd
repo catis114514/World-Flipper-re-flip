@@ -65,6 +65,7 @@ var armed_power_flip_level := 0
 var skill_point_gain_per_direct_attack := 50
 var power_flip_combo_thresholds: Array = [9, 15, 39]
 var pending_player_skill_events: Array[Dictionary] = []
+var pending_enemy_action_events: Array[Dictionary] = []
 var party_conditions: Dictionary = {}
 var enemy_conditions: Dictionary = {}
 var direct_attack_count := 0
@@ -197,6 +198,7 @@ func step() -> void:
     if not enemy_instances.is_empty() and enemy_actions_enabled:
         _step_enemy_actions()
         _step_funnel_entities()
+        _step_pending_enemy_action_events()
     var projectile_damage: int = action_executor.step(player.position, player.radius, player_max_hp)
     if projectile_damage > 0 and player_damage_cooldown_frames == 0:
         player_hp = maxi(0, player_hp - projectile_damage)
@@ -252,6 +254,7 @@ func get_progress_snapshot() -> Dictionary:
         "enemies": get_enemy_snapshots(),
         "emitters": _get_emitter_snapshots(),
         "pending_player_skill_event_count": pending_player_skill_events.size(),
+        "pending_enemy_action_event_count": pending_enemy_action_events.size(),
         "direct_attack_count": direct_attack_count,
         "fever_points": fever_points,
         "fever_active": fever_active,
@@ -813,20 +816,97 @@ func _invoke_enemy_action(actor_or_action: Variant, requested_action_id: String 
     var definition: Dictionary = actor["definition"]
     var formula: Dictionary = definition.get("atk_formula", {})
     var reference_party_hp := maxi(1, int(formula.get("party_hp_level_1", player_max_hp)))
-    var enemy_body: SimBody = actor["body"]
-    var created: int = action_executor.start_action(
+    return _schedule_enemy_action_runtime(
         action,
-        enemy_body.position,
-        player.position,
+        int(actor["serial"]),
         int(definition.get("atk", 1)),
         float(corrections.get(correction_name, 1.0)),
-        int(actor["serial"]),
+        reference_party_hp
+    )
+
+func _schedule_enemy_action_runtime(
+    action: Dictionary,
+    source_serial: int,
+    enemy_atk: int,
+    quest_correction: float,
+    reference_party_hp: int
+) -> int:
+    var created := 0
+    for runtime_variant in action.get("runtime", []):
+        if not runtime_variant is Dictionary:
+            continue
+        var runtime: Dictionary = runtime_variant
+        var delay_frames := int(runtime.get("delay_frames", 0))
+        if delay_frames > 0:
+            pending_enemy_action_events.append({
+                "due_frame": elapsed_frames + delay_frames,
+                "source_serial": source_serial,
+                "enemy_atk": enemy_atk,
+                "quest_correction": quest_correction,
+                "reference_party_hp": reference_party_hp,
+                "runtime": runtime.duplicate(true),
+            })
+            continue
+        created += _start_enemy_action_runtime(
+            runtime,
+            source_serial,
+            enemy_atk,
+            quest_correction,
+            reference_party_hp
+        )
+    return created
+
+func _step_pending_enemy_action_events() -> void:
+    var waiting: Array[Dictionary] = []
+    for event in pending_enemy_action_events:
+        if elapsed_frames < int(event["due_frame"]):
+            waiting.append(event)
+            continue
+        _start_enemy_action_runtime(
+            event["runtime"],
+            int(event["source_serial"]),
+            int(event["enemy_atk"]),
+            float(event["quest_correction"]),
+            int(event["reference_party_hp"])
+        )
+    pending_enemy_action_events = waiting
+
+func _start_enemy_action_runtime(
+    runtime: Dictionary,
+    source_serial: int,
+    enemy_atk: int,
+    quest_correction: float,
+    reference_party_hp: int
+) -> int:
+    var origin := Vector2.ZERO
+    var owner_actor: Dictionary = {}
+    if source_serial > 0:
+        owner_actor = _find_enemy_instance(source_serial)
+        if owner_actor.is_empty():
+            return 0
+        var owner_body: SimBody = owner_actor["body"]
+        origin = owner_body.position
+    else:
+        var funnel := _find_funnel_entity(-source_serial)
+        if funnel.is_empty():
+            return 0
+        origin = Vector2(funnel["position"])
+        owner_actor = _find_enemy_instance(int(funnel.get("owner_serial", 0)))
+        if owner_actor.is_empty():
+            return 0
+    var created: int = action_executor.start_runtime(
+        runtime,
+        origin,
+        player.position,
+        enemy_atk,
+        quest_correction,
+        source_serial,
         reference_party_hp
     )
     var spawn_events: Array = action_executor.consume_spawn_events()
     for spawn_event_variant in spawn_events:
         var spawn_event: Dictionary = spawn_event_variant
-        _spawn_funnel_entity(spawn_event, actor)
+        _spawn_funnel_entity(spawn_event, owner_actor)
     funnel_spawn_count += spawn_events.size()
     return created
 
@@ -874,6 +954,7 @@ func _step_funnel_entities() -> void:
         if owner_actor.is_empty():
             world.remove_body(funnel["body"])
             action_executor.remove_source(-int(funnel["serial"]))
+            _remove_pending_enemy_action_events(-int(funnel["serial"]))
             funnel_entities.remove_at(index)
             continue
         var owner_body: SimBody = owner_actor["body"]
@@ -888,13 +969,11 @@ func _step_funnel_entities() -> void:
         var action := _find_action_definition(last_funnel_action_id)
         if not action.is_empty():
             var corrections: Dictionary = quest["battle"]["atk_corrections"]
-            action_executor.start_action(
+            _schedule_enemy_action_runtime(
                 action,
-                Vector2(funnel["position"]),
-                player.position,
+                -int(funnel["serial"]),
                 int(funnel["atk"]),
                 float(corrections.get("funnel", 1.0)),
-                -int(funnel["serial"]),
                 int(funnel["reference_party_hp"])
             )
         funnel["frames_until_action"] = int(funnel["action_interval_frames"])
@@ -910,6 +989,7 @@ func _apply_funnel_damage(serial: int, damage: int) -> void:
         if int(funnel["hp"]) == 0:
             world.remove_body(funnel["body"])
             action_executor.remove_source(-serial)
+            _remove_pending_enemy_action_events(-serial)
             funnel_entities.remove_at(index)
         return
 
@@ -946,6 +1026,17 @@ func _find_enemy_instance(serial: int) -> Dictionary:
         if int(actor["serial"]) == serial:
             return actor
     return {}
+
+func _find_funnel_entity(serial: int) -> Dictionary:
+    for funnel in funnel_entities:
+        if int(funnel["serial"]) == serial:
+            return funnel
+    return {}
+
+func _remove_pending_enemy_action_events(source_serial: int) -> void:
+    for index in range(pending_enemy_action_events.size() - 1, -1, -1):
+        if int(pending_enemy_action_events[index].get("source_serial", 0)) == source_serial:
+            pending_enemy_action_events.remove_at(index)
 
 func _primary_enemy_instance() -> Dictionary:
     if primary_enemy_serial != 0:
@@ -1066,12 +1157,14 @@ func _deactivate_enemy_instance(serial: int) -> void:
     var actor: Dictionary = enemy_instances[actor_index]
     world.remove_body(actor["body"])
     action_executor.remove_source(serial)
+    _remove_pending_enemy_action_events(serial)
     for index in range(funnel_entities.size() - 1, -1, -1):
         var funnel: Dictionary = funnel_entities[index]
         if int(funnel.get("owner_serial", 0)) != serial:
             continue
         world.remove_body(funnel["body"])
         action_executor.remove_source(-int(funnel["serial"]))
+        _remove_pending_enemy_action_events(-int(funnel["serial"]))
         funnel_entities.remove_at(index)
     var emitter_index := int(actor.get("emitter_index", -1))
     if emitter_index >= 0 and emitter_index < emitter_states.size():
@@ -1090,6 +1183,7 @@ func _deactivate_all_enemies() -> void:
         action_executor.remove_source(-int(funnel["serial"]))
     enemy_instances.clear()
     funnel_entities.clear()
+    pending_enemy_action_events.clear()
     action_executor.clear()
     primary_enemy_serial = 0
     enemy_active = false

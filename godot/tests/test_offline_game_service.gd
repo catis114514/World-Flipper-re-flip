@@ -59,6 +59,11 @@ func run(t) -> void:
     t.assert_equal(third_story["id"], "1003001", "clearing stage two advances to the next CN story")
     t.assert_equal(service.complete_story(profile, third_story, "story-1003001")["quest_id"], "1003001", "third stage story completes locally")
     t.assert_equal(_next(service, catalog, profile)["id"], "1003002", "third stage story exposes the next unconverted battle")
+    profile.quest_progress["1003002"] = {"cleared": true, "clear_count": 1}
+    var fourth_story := _next(service, catalog, profile)
+    t.assert_equal(fourth_story["id"], "1004001", "clearing the Fox battle advances to the forest-spirit story")
+    t.assert_equal(service.complete_story(profile, fourth_story, "story-1004001")["quest_id"], "1004001", "fourth stage story completes locally")
+    t.assert_equal(_next(service, catalog, profile)["id"], "1004002", "forest-spirit story exposes the next unconverted battle")
 
 func _next(service, catalog, profile) -> Dictionary:
     return service.get_next_main_quest(

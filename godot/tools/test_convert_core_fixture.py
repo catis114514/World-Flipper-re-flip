@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import math
 import os
 import subprocess
 import sys
@@ -16,6 +17,7 @@ CHECKED_FIXTURES = {
     "1001002": PROJECT_ROOT / "godot/content/fixtures/quest_1001002.json",
     "1002001": PROJECT_ROOT / "godot/content/fixtures/quest_1002001.json",
     "1002002": PROJECT_ROOT / "godot/content/fixtures/quest_1002002.json",
+    "1003002": PROJECT_ROOT / "godot/content/fixtures/quest_1003002.json",
 }
 DEFAULT_WF_ASSETS = Path(os.environ.get("WF_ASSETS_CN_ROOT", "/home/codex/work/wf-assets-cn"))
 DEFAULT_APK = Path(os.environ.get("WF_CLIENT_APK", "/home/codex/work/client-v1.8.1.apk"))
@@ -194,14 +196,107 @@ class ConvertCoreFixtureTest(unittest.TestCase):
             {"kind": "time", "value": 210},
         )
 
-    def test_delayed_enemy_action_is_rejected_until_runtime_scheduling_exists(self) -> None:
+    def test_fourth_fixture_contains_fox_rabbit_and_delayed_skill_waves(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "quest_1003002.json"
+            self.run_converter(output, "1003002")
+            fixture = json.loads(output.read_text(encoding="utf-8"))
+
+        self.assertEqual(fixture["id"], "1003002")
+        self.assertEqual(fixture["name"], "\u9633\u5149\u900f\u843d\u7684\u68ee\u6797")
+        self.assertEqual(fixture["battle"]["field_data_id"], "main_1_3_2")
+        self.assertEqual(fixture["battle"]["field_id"], "tree_forest")
+        self.assertEqual(fixture["battle"]["enemy_level"], 25)
+        self.assertEqual(fixture["zones"][0]["objective"], {"kind": "zako_kill", "count": 20})
+        self.assertEqual(
+            fixture["zones"][0]["zako_emitters"],
+            [
+                {"enemy_id": "slango", "interval_frames": 60},
+                {"enemy_id": "fox", "interval_frames": 120},
+                {"enemy_id": "one_eyed_rabbit", "interval_frames": 150},
+            ],
+        )
+        self.assertEqual(fixture["zones"][1]["bosses"], [{"enemy_id": "fox", "kind": "general_boss"}])
+        self.assertEqual(fixture["enemies"]["slango_zako"]["max_hp"], 284)
+        self.assertEqual(fixture["enemies"]["fox_zako"]["max_hp"], 1707)
+        self.assertEqual(fixture["enemies"]["one_eyed_rabbit_zako"]["max_hp"], 2371)
+        self.assertEqual(fixture["enemies"]["fox_funnel"]["max_hp"], 202)
+        self.assertEqual(fixture["enemies"]["fox_boss"]["max_hp"], 33911)
+        self.assertEqual(fixture["enemies"]["fox_boss"]["atk"], 51)
+        state_machine = fixture["enemies"]["fox_boss"]["action_state_machine"]
+        self.assertEqual(len(state_machine["states"]), 37)
+        self.assertEqual(
+            state_machine["states"]["skill1_charge1"]["termination"],
+            {"kind": "time", "value": 300, "source_variable": "charge1"},
+        )
+        self.assertEqual(set(fixture["terrain_runtime"]["markers"]), {"p0", "p1", "p2", "p3", "p4"})
+        action_by_id = {action["id"]: action for action in fixture["action_assets"]}
+        fox_skill = action_by_id[
+            "battle/action/enemy/action/general_boss/boss_fox$difficulity10_skill_shot1"
+        ]["runtime"]
+        self.assertEqual([pattern.get("delay_frames", 0) for pattern in fox_skill], [0, 0, 12, 12, 24, 24])
+        self.assertEqual([pattern["distribution"]["count"] for pattern in fox_skill], [7, 2, 7, 2, 7, 2])
+
+    def test_delayed_enemy_action_runtime_preserves_wait_frames(self) -> None:
         converter = self.load_converter_module()
         delayed_spawn = [
             "Event",
-            ["Wait", 5, None, ["Command", ["SpawnFunnel"]]],
+            [
+                "Wait",
+                5,
+                None,
+                ["Command", ["SpawnFunnel", ["Zako", "fox"], 5, ["Group", 1]]],
+            ],
         ]
-        with self.assertRaisesRegex(ValueError, "delayed enemy action command"):
-            converter.normalize_action_runtime(delayed_spawn)
+        self.assertEqual(
+            converter.normalize_action_runtime(delayed_spawn),
+            [
+                {
+                    "kind": "spawn_funnel",
+                    "enemy_kind": "zako",
+                    "enemy_id": "fox",
+                    "level": 5,
+                    "group_id": 1,
+                    "delay_frames": 5,
+                }
+            ],
+        )
+
+    def test_delayed_enemy_action_runtime_rejects_invalid_wait_frames(self) -> None:
+        converter = self.load_converter_module()
+        spawn_command = ["Command", ["SpawnFunnel", ["Zako", "fox"], 5, ["Group", 1]]]
+        for wait_value in (-1, 1.5, 5.0, "5", True, None, math.nan, math.inf, -math.inf, 1 << 53):
+            with self.subTest(wait_value=wait_value):
+                malformed_wait = ["Event", ["Wait", wait_value, None, spawn_command]]
+                with self.assertRaisesRegex(ValueError, "invalid Wait frame count"):
+                    converter.normalize_action_runtime(malformed_wait)
+
+        malformed_nodes = [
+            ["Event", ["Wait", 5, None]],
+            ["Event", ["Wait", 5, None, spawn_command, spawn_command]],
+            ["Event", ["Wait", 5, None, spawn_command], None],
+        ]
+        for malformed_node in malformed_nodes:
+            with self.subTest(malformed_node=malformed_node):
+                with self.assertRaisesRegex(ValueError, "malformed"):
+                    converter.normalize_action_runtime(malformed_node)
+
+        overflowing_wait = [
+            "Event",
+            [
+                "Wait",
+                (1 << 53) - 1,
+                None,
+                ["Event", ["Wait", 1, None, spawn_command]],
+            ],
+        ]
+        with self.assertRaisesRegex(ValueError, "invalid Wait frame count"):
+            converter.normalize_action_runtime(overflowing_wait)
+
+        for accumulator in (5.5, 1 << 53):
+            with self.subTest(accumulator=accumulator):
+                with self.assertRaisesRegex(ValueError, "invalid Wait frame count"):
+                    list(converter.iter_action_commands_with_delay(spawn_command, accumulator))
 
 
 if __name__ == "__main__":
