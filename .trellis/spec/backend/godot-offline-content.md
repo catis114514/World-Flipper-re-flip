@@ -87,6 +87,7 @@ Multi-emitter battle ownership:
 - Fixed-step collision tests must distinguish approaching impact from separating overlap and expose normal impact speed.
 - Simulation regression: quest `1001002` remains 18 single-emitter zakos with 60-frame respawns followed by the 13009-HP boss; timeout terminal states produce no result.
 - Multi-emitter regression: quest `1002001` starts one `slango` and one `spirit`, retains independent 60/120-frame emitter cooldowns, counts exactly 20 objective deaths, then activates the 18295-HP Spirit boss with its 31-state cycle.
+- Content-reuse regression: quest `1002002` uses the same independent 60/120-frame emitters for exactly 22 objective deaths, then activates the 12196-HP Slango boss with its 36-state cycle and 210-frame skill charge. This must be fixture-driven, not a quest-ID runtime branch.
 - Ownership regression: serials change on respawn; killing one enemy leaves the other emitter active; owner teardown removes only owned projectiles/funnels; delayed skills cannot hit enemies/funnels created after cast time.
 - Timing regression: poison/delayed-skill deaths start a full emitter cooldown, and a terminal ready event prevents remaining same-frame condition events from mutating cleared/failed state.
 - Action regression: the four checked DSL assets normalize to exact projectile/funnel parameters; N-way and circle patterns are deterministic; canonical enemy ATK (19/30) and attack multipliers damage party HP; zero HP terminates with `party_defeated` and no result.
@@ -96,6 +97,7 @@ Multi-emitter battle ownership:
 - Transaction replacement regression: a staged result that changes character progress and equipment inventory must update both the live profile and the reloaded save.
 - Party snapshot regression: canonical CN level-one stats total to 162 HP / 30 ATK, missing selected definitions reject start, profile edits do not mutate a running snapshot, and attack scaling is deterministic.
 - Save/reload/idempotency and interrupted-run abort tests.
+- Main-flow regression advances through converted `1002002`, completes story `1003001`, blocks explicitly at unconverted `1003002`, and keeps the latest cleared fixture replayable.
 - Two clean user-data headless runs, editor scan, main-scene smoke, and Windows export.
 
 ## 7. Wrong vs Correct

@@ -196,6 +196,14 @@ The preceding single-battle limitation is superseded:
 
 Still non-parity: the original terrain/spawn coordinates and 90-frame spawn-point animation are unavailable, so initial placement/separation remains an explicit adapter. Broader quest conversion requires adding verified enemy adapter entries rather than silently treating unknown masters as `slango`/`spirit`.
 
+## Godot Third Battle Expansion (2026-07-23)
+
+- Converted main battle `1002002` (`追蘑菇2`) from the same checked CN 1.4.54 sources; fixture SHA-256 is `e46b5e39381b935ca56d535e1417ab1b5628aa6598e84aac514b48fbf232fdb8`.
+- Zone 0 retains the independent 60-frame `slango` and 120-frame `spirit` emitters with a 22-kill objective. Zone 1 returns to the complete 36-state Slango boss cycle at canonical 12196 HP / 30 ATK and a 210-frame skill charge.
+- No quest-ID runtime behavior was added: the existing fixture, repository, multi-emitter simulation, Slango action/state machine, session, and progression boundaries handle the quest generically.
+- Main flow now continues through `1002002`, then story `1003001`, and blocks explicitly at unconverted battle `1003002`; replay selects the latest cleared fixture `1002002`.
+- Final gate: core converter 5/5; offline catalog determinism unchanged; Godot `PASS 556 assertions` twice from clean roots; three-battle flow, editor scan, 120-frame main-scene smoke, server-security regression, gacha-position regression, and runtime dependency audit pass.
+
 ### Legacy compatibility-server hardening
 
 - Signup viewer IDs are random sessions rather than predictable account IDs.

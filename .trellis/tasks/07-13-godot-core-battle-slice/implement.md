@@ -82,6 +82,14 @@ Rollback point: simulation remains independent of Godot nodes; presentation work
 - Verification: core converter 5/5; offline catalog determinism unchanged; server-security and gacha-position regressions pass; Godot 518 assertions twice from clean data roots; two-battle scene flow, editor scan, and 120-frame main-scene smoke pass.
 - Exact terrain/spawn animation, broad enemy adapter coverage, original visual assets, and interactive Windows verification remain pending.
 
+## Latest Verification (2026-07-23, third converted battle)
+
+- Added checked fixture `1002002` (`追蘑菇2`) without a quest-specific runtime branch. It reuses the existing 60/120-frame Slango/Spirit emitters for a 22-kill objective, then activates the canonical 12196-HP / 30-ATK Slango boss and complete 36-state cycle.
+- Registered the fixture through the existing content boundary and extended repository, simulation, session, progression, presentation, normal-input replay, and main-scene flow regressions.
+- Main progression now runs `1001001 story -> 1001002 battle -> 1001003 story -> 1002001 battle -> 1002002 battle -> 1003001 story`; unsupported `1003002` blocks explicitly while replay selects `1002002`.
+- Verification: core converter 5/5; offline catalog determinism unchanged; `1002002` fixture SHA-256 `e46b5e39381b935ca56d535e1417ab1b5628aa6598e84aac514b48fbf232fdb8`; Godot 556 assertions twice from clean data roots; three-battle scene flow, editor scan, 120-frame main-scene smoke, server-security regression, gacha-position regression, and runtime dependency audit pass.
+- Final diff review found no quest-ID runtime branch, duplicate helper, speculative API, broad fallback, debug residue, or unresolved cross-layer contract. Exact terrain/spawn animation, broad enemy adapter coverage, original visual assets, and interactive Windows verification remain pending overall.
+
 ## Risky Areas
 
 - Physics update order and numeric differences between ActionScript/Haxe and GDScript.

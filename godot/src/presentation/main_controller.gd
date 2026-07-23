@@ -10,6 +10,7 @@ const ProfileDataScript = preload("res://src/domain/profile_data.gd")
 const BATTLE_FIXTURES := [
     {"id": "1001002", "path": "res://content/fixtures/quest_1001002.json"},
     {"id": "1002001", "path": "res://content/fixtures/quest_1002001.json"},
+    {"id": "1002002", "path": "res://content/fixtures/quest_1002002.json"},
 ]
 
 @onready var menu: Control = $UI/Menu

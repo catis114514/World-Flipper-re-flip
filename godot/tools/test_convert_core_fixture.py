@@ -15,6 +15,7 @@ CONVERTER = PROJECT_ROOT / "godot/tools/convert_core_fixture.py"
 CHECKED_FIXTURES = {
     "1001002": PROJECT_ROOT / "godot/content/fixtures/quest_1001002.json",
     "1002001": PROJECT_ROOT / "godot/content/fixtures/quest_1002001.json",
+    "1002002": PROJECT_ROOT / "godot/content/fixtures/quest_1002002.json",
 }
 DEFAULT_WF_ASSETS = Path(os.environ.get("WF_ASSETS_CN_ROOT", "/home/codex/work/wf-assets-cn"))
 DEFAULT_APK = Path(os.environ.get("WF_CLIENT_APK", "/home/codex/work/client-v1.8.1.apk"))
@@ -48,17 +49,12 @@ class ConvertCoreFixtureTest(unittest.TestCase):
             check=True,
         )
 
-    def test_converter_matches_checked_golden_fixture(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            output = Path(directory) / "quest_1001002.json"
-            self.run_converter(output)
-            self.assertEqual(output.read_bytes(), CHECKED_FIXTURES["1001002"].read_bytes())
-
-    def test_second_quest_converter_matches_checked_golden_fixture(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            output = Path(directory) / "quest_1002001.json"
-            self.run_converter(output, "1002001")
-            self.assertEqual(output.read_bytes(), CHECKED_FIXTURES["1002001"].read_bytes())
+    def test_converter_matches_checked_golden_fixtures(self) -> None:
+        for quest_id, checked_fixture in CHECKED_FIXTURES.items():
+            with self.subTest(quest_id=quest_id), tempfile.TemporaryDirectory() as directory:
+                output = Path(directory) / f"quest_{quest_id}.json"
+                self.run_converter(output, quest_id)
+                self.assertEqual(output.read_bytes(), checked_fixture.read_bytes())
 
     def test_fixture_contains_canonical_cn_battle_graph(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -165,6 +161,38 @@ class ConvertCoreFixtureTest(unittest.TestCase):
         ]["runtime"]
         self.assertEqual([pattern["distribution"]["count"] for pattern in spirit_skill], [3, 6, 8])
         self.assertEqual([pattern["attack_multiplier"] for pattern in spirit_skill], [2.75, 2.75, 2.75])
+
+    def test_third_fixture_reuses_multi_emitter_runtime_with_slango_boss(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "quest_1002002.json"
+            self.run_converter(output, "1002002")
+            fixture = json.loads(output.read_text(encoding="utf-8"))
+
+        self.assertEqual(fixture["id"], "1002002")
+        self.assertEqual(fixture["name"], "\u8ffd\u8611\u83c72")
+        self.assertEqual(fixture["battle"]["field_data_id"], "main_1_2_2")
+        self.assertEqual(fixture["battle"]["field_id"], "tree_grass01_2_2")
+        self.assertEqual(fixture["battle"]["hp_corrections"]["boss"], 0.75)
+        self.assertEqual(fixture["zones"][0]["objective"], {"kind": "zako_kill", "count": 22})
+        self.assertEqual(
+            fixture["zones"][0]["zako_emitters"],
+            [
+                {"enemy_id": "slango", "interval_frames": 60},
+                {"enemy_id": "spirit", "interval_frames": 120},
+            ],
+        )
+        self.assertEqual(
+            fixture["zones"][1]["bosses"],
+            [{"enemy_id": "slango", "kind": "general_boss"}],
+        )
+        self.assertEqual(fixture["enemies"]["slango_boss"]["max_hp"], 12196)
+        self.assertEqual(fixture["enemies"]["slango_boss"]["atk"], 30)
+        state_machine = fixture["enemies"]["slango_boss"]["action_state_machine"]
+        self.assertEqual(len(state_machine["states"]), 36)
+        self.assertEqual(
+            state_machine["states"]["skill1_charge1"]["termination"],
+            {"kind": "time", "value": 210},
+        )
 
     def test_delayed_enemy_action_is_rejected_until_runtime_scheduling_exists(self) -> None:
         converter = self.load_converter_module()

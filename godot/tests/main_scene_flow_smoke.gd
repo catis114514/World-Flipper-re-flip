@@ -76,11 +76,42 @@ func _run() -> void:
         quit(1); return
     scene._return_to_menu()
     await process_frame
-    if not "1002002" in scene.quest_label.text or not scene.replay_button.visible or not scene.start_button.disabled:
-        push_error("unsupported third battle does not preserve second-battle replay access")
+    if not "1002002" in scene.start_button.text or scene.start_button.disabled:
+        push_error("second clear did not advance to the converted third battle")
         quit(1); return
-    if not "1002001" in scene.replay_button.text:
-        push_error("replay fallback did not select the latest cleared fixture")
+    var third_stamina_before := int(scene.profile.stamina_state["stored_value"])
+    scene._start_battle()
+    var third_run_id := str(scene.profile.active_run.get("run_id", ""))
+    var third_reloaded = scene.save_repository.load_profile()
+    if str(scene.profile.active_run.get("quest_id", "")) != "1002002" or not third_run_id.begins_with("run-") or third_run_id in [first_run_id, second_run_id] or str(third_reloaded.active_run.get("run_id", "")) != third_run_id:
+        push_error("third scene battle did not persist a distinct generated run identity")
         quit(1); return
-    print("PASS main scene two-battle progression flow smoke")
+    if int(scene.profile.stamina_state["stored_value"]) != third_stamina_before - 6:
+        push_error("third scene battle did not deduct canonical stamina")
+        quit(1); return
+    scene.battle.enemy_actions_enabled = false
+    BattleTestDriver.clear_quest(scene.battle, 25000)
+    if scene.battle.status != "cleared":
+        push_error("multi-emitter third battle did not clear through the scene flow")
+        quit(1); return
+    scene._finish_battle()
+    var third_finished = scene.save_repository.load_profile()
+    if not third_finished.active_run.is_empty() or int(third_finished.quest_progress.get("1002002", {}).get("clear_count", 0)) != 1:
+        push_error("third scene result did not survive reload")
+        quit(1); return
+    scene._return_to_menu()
+    await process_frame
+    if not "1003001" in scene.quest_label.text or scene.start_button.disabled:
+        push_error("third battle did not advance to the following CN story")
+        quit(1); return
+    scene._start_battle()
+    scene._return_to_menu()
+    await process_frame
+    if not "1003002" in scene.quest_label.text or not scene.replay_button.visible or not scene.start_button.disabled:
+        push_error("unsupported fourth battle does not preserve third-battle replay access")
+        quit(1); return
+    if not "1002002" in scene.replay_button.text:
+        push_error("replay fallback did not select the third cleared fixture")
+        quit(1); return
+    print("PASS main scene three-battle progression flow smoke")
     quit(0)

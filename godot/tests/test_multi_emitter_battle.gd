@@ -7,6 +7,7 @@ func run(t) -> void:
     var repository = StaticContentRepository.new()
     t.assert_equal(repository.load_fixture("res://content/fixtures/quest_1001002.json"), OK, "single-emitter compatibility fixture loads")
     t.assert_equal(repository.load_fixture("res://content/fixtures/quest_1002001.json"), OK, "multi-emitter fixture loads")
+    t.assert_equal(repository.load_fixture("res://content/fixtures/quest_1002002.json"), OK, "third multi-emitter fixture loads")
     var quest: Dictionary = repository.get_quest("1002001")
 
     var poison_cooldown_battle = BattleSimulation.new(quest, "run-poison-cooldown", {"total_hp": 162, "total_atk": 30, "direct_attack_reference_atk": 30})
@@ -96,3 +97,25 @@ func run(t) -> void:
     battle._apply_enemy_damage_to_serial(int(battle.get_progress_snapshot()["enemies"][0]["serial"]), 99999999)
     t.assert_equal(battle.status, "cleared", "Spirit boss defeat clears the second quest")
     t.assert_equal(battle.build_result("result-multi-emitter")["quest_id"], "1002001", "second quest result keeps its quest id")
+
+    var third_battle = BattleSimulation.new(repository.get_quest("1002002"), "run-third-multi-emitter", {"total_hp": 162, "total_atk": 30, "direct_attack_reference_atk": 30})
+    third_battle.enemy_actions_enabled = false
+    var third_initial: Dictionary = third_battle.get_progress_snapshot()
+    t.assert_equal(third_initial["objective_target"], 22, "third quest exposes its twenty-two-enemy objective")
+    t.assert_equal(third_initial["active_enemy_count"], 2, "third quest starts both checked emitters")
+    var third_guard := 0
+    while third_battle.status == "running" and third_battle.current_zone_index == 0 and third_guard < 2500:
+        var active_enemies: Array = third_battle.get_progress_snapshot()["enemies"]
+        for enemy_snapshot in active_enemies:
+            third_battle._apply_enemy_damage_to_serial(int(enemy_snapshot["serial"]), 999999)
+        if third_battle.status == "running" and third_battle.current_zone_index == 0 and third_battle.enemy_instances.is_empty():
+            third_battle.step()
+        third_guard += 1
+    t.assert_true(third_guard < 2500, "third multi-emitter objective completes without a runaway scheduler")
+    t.assert_equal(third_battle.current_zone_index, 1, "twenty-two defeats transition to the third quest boss")
+    t.assert_equal(third_battle.current_enemy_id, "slango", "third quest activates the Slango boss")
+    t.assert_equal(third_battle.enemy_hp, 12196, "third quest applies its canonical Slango boss HP")
+    t.assert_equal(third_battle.enemy_state_machine["states"].size(), 36, "third quest activates the complete Slango state machine")
+    third_battle._apply_enemy_damage_to_serial(int(third_battle.get_progress_snapshot()["enemies"][0]["serial"]), 99999999)
+    t.assert_equal(third_battle.status, "cleared", "Slango boss defeat clears the third quest")
+    t.assert_equal(third_battle.build_result("result-third-multi-emitter")["quest_id"], "1002002", "third quest result keeps its quest id")

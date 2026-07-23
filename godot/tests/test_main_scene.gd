@@ -56,6 +56,13 @@ func run(t) -> void:
     t.assert_true("击破 0/20" in second_status, "HUD text shows the second quest objective")
     t.assert_true("敌人 2 / 总HP 890" in second_status, "HUD text aggregates both concurrent enemies")
 
+    t.assert_equal(repository.load_fixture("res://content/fixtures/quest_1002002.json"), OK, "third presentation fixture loads")
+    var third_battle = BattleSimulation.new(repository.get_quest("1002002"), "run-third-presentation")
+    scene.battle = third_battle
+    var third_status: String = scene._battle_status_text()
+    t.assert_true("击破 0/22" in third_status, "HUD text shows the third quest objective")
+    t.assert_true("敌人 2 / 总HP 890" in third_status, "third quest HUD retains both concurrent enemies")
+
     scene.game_service = OfflineGameService.new()
     scene.catalog_repository = EmptyCatalog.new()
     scene.profile = ProfileFactory.create_default()

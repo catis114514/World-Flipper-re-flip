@@ -48,3 +48,10 @@
 - Battle runtime supports one active enemy per emitter with independent serial/state/cooldown ownership. Quest `1002001` runs concurrent 60-frame `slango` and 120-frame `spirit` emitters, then the 31-state Spirit boss.
 - Progress now blocks at unconverted `1002002`; replay selects the latest cleared converted quest.
 - Current gate: core converter 5/5, Godot 518 assertions twice, two-battle scene flow, normal-input replay for both fixtures, editor scan, and 120-frame smoke.
+
+## 2026-07-23 third-battle follow-up
+
+- The earlier `1002002` block is superseded: `追蘑菇2` now has a checked deterministic fixture and reuses the content-driven multi-emitter runtime without a quest-ID branch.
+- Its first zone runs the checked 60/120-frame Slango/Spirit emitters for 22 defeats; the second zone uses the canonical 12196-HP / 30-ATK, 36-state Slango boss.
+- Progress now continues through story `1003001` and blocks explicitly at unconverted `1003002`; replay selects cleared `1002002`.
+- Final gate: core converter 5/5, catalog determinism `ab9bfdbcd0600e752a31e2fed8d5705161608329964c2c7ca448de519e2a6ab6`, Godot 556 assertions twice, three-battle scene flow, editor/120-frame smoke, server/gacha regressions, and runtime dependency audit.
