@@ -64,3 +64,8 @@
 - Recovered equipment master/status curves and ported original `EquipmentStatusLogic` ceil interpolation. 老旧短剑 contributes 47 HP/18 ATK at level 1 and interpolates to 59 HP/22 ATK at level 3. Weapon stats now participate in immutable party totals and battle damage/HP.
 - Normalized checked ability-soul rows: the weapon carries `ResistanceWhite` 0.175 and the orb carries party `FixedHeal` 0.1. Equipped ability rows enter the party snapshot; the supported orb heal executes on skill activation. Unsupported resistance semantics remain data-only.
 - Verification: converter 2 tests; Godot 347 assertions twice; editor scan, smoke, and Windows release export passed. Fixture SHA-256 `29a62e751756cecc665ab04283be6e2a1966ce591ff56577589f7c57c82f0eaa`. Release: 109169800 bytes, SHA-256 `cd3892dc609b91d4f059f6e9f0c9e8c1b97b83335afc3c94d8e1ac4965c84f7f`.
+
+## 2026-07-23 - Second converted battle
+
+- Added checked quest `1002001`, multi-enemy/emitter battle runtime, and `1001001 -> 1001002 -> 1001003 -> 1002001` offline progression; pushed work commit `6a7e44c968566fd030daab0e16d7145d04de9758`.
+- Gate: core converter 5/5; offline catalog determinism `ab9bfdbcd0600e752a31e2fed8d5705161608329964c2c7ca448de519e2a6ab6`; Godot 518 assertions; two-battle flow, editor scan, and 120-frame smoke passed. Task remains in progress pending interactive Windows playthrough and exact terrain/spawn/visual parity.
