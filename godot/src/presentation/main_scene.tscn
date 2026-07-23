@@ -76,13 +76,13 @@ text = "开服纪念扭蛋 十连（1500）"
 custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
-text = "进入 1001002「开始的草原」"
+text = "开始当前主线"
 
 [node name="ReplayButton" type="Button" parent="UI/Menu"]
 visible = false
 custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
-text = "重玩 1001002「开始的草原」"
+text = "重玩最近关卡"
 
 [node name="BattleHUD" type="VBoxContainer" parent="UI"]
 visible = false

@@ -169,19 +169,32 @@ ClientError 2274: ID: 141010のキャラクターの entry_count が存在しま
 
 | Check | Result |
 |---|---|
-| CN offline catalog | 419 main quests / 505 characters / 436 equipments / 584 banners / 581 projected reward pools |
-| Catalog determinism | `1ed88030046fa325699e2ac109373b838a0fedaf2ebb02d476fbb3dd47d1b5de` |
+| CN offline catalog | schema 2: 12 chapters / 139 stage nodes / 419 main quests / 505 characters / 436 equipments / 584 banners / 581 projected reward pools |
+| Catalog determinism | `ab9bfdbcd0600e752a31e2fed8d5705161608329964c2c7ca448de519e2a6ab6` |
 | Save schema | v6: stamina anchor, rank points, gacha RNG, operation ledger, inbox |
 | Local actions | party rotation, leader upgrade, stamina-spending battle start, idempotent 1/10 draw, inbox claim |
 | Gacha movie flag | independently sampled per position at 10.05%; does not affect rewards |
 | Battle additions | transactional stamina start, CN pooled/character EXP result, 900-frame Fever state, touch skill controls |
-| Godot tests | `PASS 437 assertions`, including normal-input playable replay |
+| Godot tests | `PASS 457 assertions`, including normal-input playable replay and chapter/stage progression |
 | Converter tests | core fixture 2/2; offline catalog two-run byte determinism passed |
 | Windows release | `artifacts/windows/StarPointCNOffline.exe`, SHA-256 `50d0bb9160bd750901c7899bf8824eee32426eb35d16fe6f927b394d0be4f6e9` |
 
 Cataloging metadata does not imply complete battle conversion. Only quest `1001002` currently owns a validated full battle graph; missing CN terrain and animation files remain explicit compatibility gaps.
 
-The main-scene flow now follows canonical prerequisites: `1001001` story summary → playable `1001002` battle → `1001003` story summary. Progress then stops explicitly at unsupported battle `1002001`, while a replay button keeps the converted battle accessible.
+At the 2026-07-22 batch boundary, the main-scene flow followed `1001001` story summary → playable `1001002` battle → `1001003` story summary and then stopped at unconverted `1002001`. The next section supersedes that limitation.
+
+## Godot Offline Battle Expansion (2026-07-23)
+
+The preceding single-battle limitation is superseded:
+
+- Converted main battle `1002001` (`追蘑菇1`) from CN 1.4.54 sources.
+- Zone 0 now runs two independent emitters: `slango` at 60 frames and `spirit` at 120 frames, with a 20-kill objective.
+- Zone 1 uses the complete 31-state Spirit boss cycle; canonical level-12 stats are 18295 HP / 36 ATK, and `charge1` resolves to 240 frames from `general_boss_variable.json`.
+- Runtime enemies own stable serials, body/HP/conditions/action state, projectile/funnel ownership, and emitter identity. Delayed skills cannot acquire later enemy/funnel spawns.
+- Main flow now continues `1001001 story -> 1001002 battle -> 1001003 story -> 1002001 battle`; progress blocks at unsupported `1002002`, and replay selects `1002001` after it is cleared.
+- Core converter: 5/5 tests. Godot: `PASS 518 assertions` twice from clean user-data roots. Two-battle main-scene flow, normal-input replay for both quests, editor scan, 120-frame smoke, server-security regression, gacha-position regression, and offline-catalog determinism all pass.
+
+Still non-parity: the original terrain/spawn coordinates and 90-frame spawn-point animation are unavailable, so initial placement/separation remains an explicit adapter. Broader quest conversion requires adding verified enemy adapter entries rather than silently treating unknown masters as `slango`/`spirit`.
 
 ### Legacy compatibility-server hardening
 

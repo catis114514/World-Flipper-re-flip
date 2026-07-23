@@ -16,6 +16,10 @@ var player_hp := 1
 var player_max_hp := 1
 var world: FixedStepWorld
 var action_executor
+var enemy_instances: Array[Dictionary] = []
+var emitter_states: Array[Dictionary] = []
+var next_enemy_serial := 1
+var primary_enemy_serial := 0
 var enemy_actions_enabled := true
 var enemy_action_frames_until_fire := 0
 var enemy_action_sequence: Array = []
@@ -102,7 +106,7 @@ func _init(quest_data: Dictionary, session_run_id: String, battle_party: Diction
     player.max_linear_velocity = 80.0
 
     enemy = SimBodyScript.new()
-    enemy.tag = "enemy"
+    enemy.tag = "enemy:0"
     enemy.dynamic = false
     enemy.radius = 0.0
     enemy.restitution = 0.9
@@ -143,6 +147,7 @@ func step() -> void:
         return
     elapsed_frames += 1
     player_damage_cooldown_frames = maxi(0, player_damage_cooldown_frames - 1)
+    _step_emitters()
     _step_fever()
     _step_player_skill_runtime()
     if status != "running":
@@ -162,42 +167,39 @@ func step() -> void:
         power_flip_level = armed_power_flip_level
         combo_count = 0
 
-    if frames_until_spawn > 0:
-        frames_until_spawn -= 1
-        if frames_until_spawn == 0:
-            _spawn_zone_enemy()
-
     var player_position_before_step := player.position
     world.step(1.0)
     _record_movement_skill_points(player_position_before_step.distance_to(player.position))
     _resolve_outhole_relaunch()
-    if enemy_active:
+    if not enemy_instances.is_empty():
         for contact in world.contacts:
             var first: SimBody = contact[0]
             var second: SimBody = contact[1]
             var other: SimBody = second if first.tag == "player" else first if second.tag == "player" else null
             if other == null:
                 continue
-            var impact_damage := maxi(1, roundi(float(contact[2]) * float(party_attack) * _party_attack_multiplier() * _ability_direct_damage_multiplier() / float(direct_attack_reference_atk)))
+            var target_conditions := _conditions_for_body(other)
+            var impact_damage := maxi(1, roundi(float(contact[2]) * float(party_attack) * _party_attack_multiplier() * _ability_direct_damage_multiplier(target_conditions) / float(direct_attack_reference_atk)))
             if armed_power_flip_level > 0:
                 var power_flip_multipliers := [1.0, 1.5, 2.0, 3.0]
                 impact_damage = maxi(1, roundi(float(impact_damage) * (float(power_flip_multipliers[armed_power_flip_level]) + _ability_power_flip_bonus())))
                 armed_power_flip_level = 0
-            if other.tag == "enemy":
-                _apply_enemy_damage(impact_damage)
+            if other.tag.begins_with("enemy:"):
+                _apply_enemy_damage_to_serial(int(other.tag.trim_prefix("enemy:")), impact_damage)
                 _record_direct_attack()
                 break
             if other.tag.begins_with("funnel:"):
                 _apply_funnel_damage(int(other.tag.trim_prefix("funnel:")), impact_damage)
                 _record_direct_attack()
+                break
     if status != "running":
         return
-    if enemy_active and enemy_actions_enabled:
+    if not enemy_instances.is_empty() and enemy_actions_enabled:
         _step_enemy_actions()
         _step_funnel_entities()
-    var projectile_damage: int = action_executor.step(player.position, player.radius)
+    var projectile_damage: int = action_executor.step(player.position, player.radius, player_max_hp)
     if projectile_damage > 0 and player_damage_cooldown_frames == 0:
-        player_hp = maxi(0, player_hp - _scale_enemy_damage(projectile_damage))
+        player_hp = maxi(0, player_hp - projectile_damage)
         player_damage_cooldown_frames = 40
         if player_hp == 0:
             _fail("party_defeated")
@@ -225,6 +227,7 @@ func get_progress_snapshot() -> Dictionary:
         "objective_progress": objective_progress,
         "objective_target": objective_target,
         "enemy_active": enemy_active,
+        "active_enemy_count": enemy_instances.size(),
         "enemy_id": current_enemy_id,
         "enemy_kind": current_enemy_kind,
         "enemy_hp": enemy_hp,
@@ -246,6 +249,8 @@ func get_progress_snapshot() -> Dictionary:
         "skill_slots": get_skill_snapshots(),
         "party_conditions": party_conditions.duplicate(true),
         "enemy_conditions": enemy_conditions.duplicate(true),
+        "enemies": get_enemy_snapshots(),
+        "emitters": _get_emitter_snapshots(),
         "pending_player_skill_event_count": pending_player_skill_events.size(),
         "direct_attack_count": direct_attack_count,
         "fever_points": fever_points,
@@ -254,6 +259,32 @@ func get_progress_snapshot() -> Dictionary:
         "outhole_relaunch_count": outhole_relaunch_count,
         "player_damage_cooldown_frames": player_damage_cooldown_frames,
     }
+
+func get_enemy_snapshots() -> Array[Dictionary]:
+    var snapshots: Array[Dictionary] = []
+    for actor in enemy_instances:
+        var body: SimBody = actor["body"]
+        snapshots.append({
+            "serial": int(actor["serial"]),
+            "enemy_id": str(actor["enemy_id"]),
+            "enemy_kind": str(actor["kind"]),
+            "hp": int(actor["hp"]),
+            "max_hp": int(actor["max_hp"]),
+            "radius": body.radius,
+            "position": [body.position.x, body.position.y],
+            "state_id": str(actor.get("state_id", "")),
+            "state_frames_remaining": int(actor.get("state_frames_remaining", 0)),
+            "conditions": actor["conditions"].duplicate(true),
+            "emitter_index": int(actor.get("emitter_index", -1)),
+        })
+    return snapshots
+
+func _get_emitter_snapshots() -> Array[Dictionary]:
+    var snapshots: Array[Dictionary] = []
+    for emitter in emitter_states:
+        var snapshot: Dictionary = emitter.duplicate(true)
+        snapshots.append(snapshot)
+    return snapshots
 
 func get_skill_snapshots() -> Array[Dictionary]:
     return skill_slots.duplicate(true)
@@ -267,9 +298,11 @@ func activate_skill(slot_index: int) -> bool:
     slot["skill_point"] = 0
     _apply_skill_activation_abilities(slot_index)
     var runtime: Dictionary = slot["runtime"]
-    pending_player_skill_events.append({"kind": "damage", "frames_remaining": int(runtime.get("delay_frames", 0)), "slot": slot_index})
+    var target_serials := _active_enemy_serials()
+    var target_funnel_serials := _active_funnel_serials()
+    pending_player_skill_events.append({"kind": "damage", "frames_remaining": int(runtime.get("delay_frames", 0)), "slot": slot_index, "target_serials": target_serials.duplicate(), "target_funnel_serials": target_funnel_serials.duplicate()})
     for condition in runtime.get("conditions", []):
-        pending_player_skill_events.append({"kind": "condition", "frames_remaining": int(condition.get("delay_frames", 0)), "slot": slot_index, "condition": condition.duplicate(true)})
+        pending_player_skill_events.append({"kind": "condition", "frames_remaining": int(condition.get("delay_frames", 0)), "slot": slot_index, "target_serials": target_serials.duplicate(), "condition": condition.duplicate(true)})
     _flush_ready_player_skill_events()
     return true
 
@@ -280,16 +313,25 @@ func _step_player_skill_runtime() -> void:
         if int(condition["remaining_frames"]) <= 0:
             party_conditions.erase(key)
     player.disable_gravity = party_conditions.has("flying")
-    if enemy_conditions.has("poison") and enemy_active:
-        var poison: Dictionary = enemy_conditions["poison"]
+    for serial in _active_enemy_serials():
+        var actor := _find_enemy_instance(int(serial))
+        if actor.is_empty():
+            continue
+        var conditions: Dictionary = actor["conditions"]
+        if not conditions.has("poison"):
+            continue
+        var poison: Dictionary = conditions["poison"]
         poison["remaining_frames"] = int(poison["remaining_frames"]) - 1
         poison["frames_until_tick"] = int(poison["frames_until_tick"]) - 1
         if int(poison["frames_until_tick"]) <= 0:
             var poison_damage := maxi(1, floori(float(poison["source_atk"]) * float(poison["strength_raw"]) / 1000.0))
-            _apply_enemy_damage(poison_damage)
+            _apply_enemy_damage_to_serial(int(serial), poison_damage)
             poison["frames_until_tick"] = int(poison["tick_frames"])
         if int(poison["remaining_frames"]) <= 0:
-            enemy_conditions.erase("poison")
+            conditions.erase("poison")
+    if status != "running":
+        pending_player_skill_events.clear()
+        return
     for event in pending_player_skill_events:
         event["frames_remaining"] = int(event["frames_remaining"]) - 1
     _flush_ready_player_skill_events()
@@ -300,33 +342,46 @@ func _flush_ready_player_skill_events() -> void:
         if int(event["frames_remaining"]) > 0:
             continue
         var slot_index := int(event["slot"])
+        pending_player_skill_events.remove_at(index)
         if slot_index >= 0 and slot_index < skill_slots.size():
             if str(event["kind"]) == "damage":
-                _execute_player_skill_damage(slot_index)
+                _execute_player_skill_damage(slot_index, event.get("target_serials", []), event.get("target_funnel_serials", []))
             elif str(event["kind"]) == "condition":
-                _apply_player_skill_condition(slot_index, event["condition"])
-        pending_player_skill_events.remove_at(index)
+                _apply_player_skill_condition(slot_index, event["condition"], event.get("target_serials", []))
+        if status != "running":
+            pending_player_skill_events.clear()
+            return
 
-func _execute_player_skill_damage(slot_index: int) -> void:
+func _execute_player_skill_damage(slot_index: int, target_serials: Array, target_funnel_serials: Array) -> void:
     var slot: Dictionary = skill_slots[slot_index]
     var runtime: Dictionary = slot["runtime"]
-    var damage := maxi(1, floori(float(slot["atk"]) * _party_attack_multiplier() * _ability_skill_damage_multiplier() * float(runtime["attack_multiplier"]) * float(runtime["max_hits"])))
-    if enemy_active:
-        _apply_enemy_damage(damage)
+    var funnel_damage := maxi(1, floori(float(slot["atk"]) * _party_attack_multiplier() * _ability_skill_damage_multiplier() * float(runtime["attack_multiplier"]) * float(runtime["max_hits"])))
+    for serial_variant in target_serials:
+        var actor := _find_enemy_instance(int(serial_variant))
+        if actor.is_empty():
+            continue
+        var damage := maxi(1, floori(float(slot["atk"]) * _party_attack_multiplier() * _ability_skill_damage_multiplier(actor["conditions"]) * float(runtime["attack_multiplier"]) * float(runtime["max_hits"])))
+        _apply_enemy_damage_to_serial(int(serial_variant), damage)
     for index in range(funnel_entities.size() - 1, -1, -1):
         var funnel: Dictionary = funnel_entities[index]
-        if Vector2(funnel["position"]).distance_to(player.position) <= float(runtime["radius"]):
-            _apply_funnel_damage(int(funnel["serial"]), damage)
+        if target_funnel_serials.has(int(funnel["serial"])) and Vector2(funnel["position"]).distance_to(player.position) <= float(runtime["radius"]):
+            _apply_funnel_damage(int(funnel["serial"]), funnel_damage)
 
-func _apply_player_skill_condition(slot_index: int, condition: Dictionary) -> void:
+func _apply_player_skill_condition(slot_index: int, condition: Dictionary, target_serials: Array) -> void:
     var kind := str(condition.get("kind", ""))
     if kind == "flying":
         party_conditions["flying"] = {"remaining_frames": int(condition["duration_frames"])}
         player.disable_gravity = true
     elif kind == "attack_up":
         party_conditions["attack_up"] = {"remaining_frames": int(condition["duration_frames"]), "amount": float(condition["amount"])}
-    elif kind == "poison" and enemy_active:
-        enemy_conditions["poison"] = {"remaining_frames": int(condition["duration_frames"]), "strength_raw": float(condition["strength_raw"]), "tick_frames": int(condition["tick_frames"]), "frames_until_tick": int(condition["tick_frames"]), "source_atk": int(skill_slots[slot_index]["atk"])}
+    elif kind == "poison":
+        for serial_variant in target_serials:
+            var actor := _find_enemy_instance(int(serial_variant))
+            if actor.is_empty():
+                continue
+            var conditions: Dictionary = actor["conditions"]
+            conditions["poison"] = {"remaining_frames": int(condition["duration_frames"]), "strength_raw": float(condition["strength_raw"]), "tick_frames": int(condition["tick_frames"]), "frames_until_tick": int(condition["tick_frames"]), "source_atk": int(skill_slots[slot_index]["atk"])}
+        _sync_primary_enemy_view()
 
 func _party_attack_multiplier() -> float:
     if not party_conditions.has("attack_up"):
@@ -350,7 +405,8 @@ func _build_skill_slots() -> void:
         var skill: Dictionary = member.get("skill", {})
         skill_slots.append({"character_id": str(member.get("main_character_id", "")), "name": str(skill.get("name", "")), "atk": int(member.get("atk", 1)), "skill_point": 0, "max_skill_point": int(skill.get("max_skill_point", 1)), "runtime": skill.get("runtime", {}).duplicate(true), "active_abilities": member.get("active_abilities", []).duplicate(true)})
 
-func _ability_direct_damage_multiplier() -> float:
+func _ability_direct_damage_multiplier(target_conditions: Variant = null) -> float:
+    var conditions: Dictionary = enemy_conditions if target_conditions == null else target_conditions
     var bonus := 0.0
     for slot in skill_slots:
         for ability in slot.get("active_abilities", []):
@@ -361,17 +417,18 @@ func _ability_direct_damage_multiplier() -> float:
                 bonus += float(ability.get("power1", 0.0))
         for ability in slot.get("active_abilities", []):
             var kind := str(ability.get("content_kind", ""))
-            if kind == "ParalysisDirectDamageSlayer" and enemy_conditions.has("paralysis"):
+            if kind == "ParalysisDirectDamageSlayer" and conditions.has("paralysis"):
                 bonus += float(ability.get("power1", 0.0))
             elif kind in ["ParalysisSlayer", "FrozenAttackSlayer"]:
                 var condition_name := "paralysis" if kind == "ParalysisSlayer" else "frozen"
-                if enemy_conditions.has(condition_name):
+                if conditions.has(condition_name):
                     bonus += float(ability.get("power1", 0.0))
             elif kind == "AdditionalDirectAtttackExtend" and str(ability.get("trigger_kind", "")) == "SkillMax" and int(slot["skill_point"]) >= int(slot["max_skill_point"]):
                 bonus += float(ability.get("power1", 0.0))
     return 1.0 + bonus
 
-func _ability_skill_damage_multiplier() -> float:
+func _ability_skill_damage_multiplier(target_conditions: Variant = null) -> float:
+    var conditions: Dictionary = enemy_conditions if target_conditions == null else target_conditions
     var bonus := 0.0
     for slot in skill_slots:
         for ability in slot.get("active_abilities", []):
@@ -379,9 +436,9 @@ func _ability_skill_damage_multiplier() -> float:
             var trigger := str(ability.get("trigger_kind", ""))
             if kind == "SkillDamage" and trigger == "DamageCount" and direct_attack_count >= int(ability.get("trigger_threshold", 0.0)):
                 bonus += float(ability.get("power1", 0.0))
-            elif kind == "FrozenAttackSlayer" and enemy_conditions.has("frozen"):
+            elif kind == "FrozenAttackSlayer" and conditions.has("frozen"):
                 bonus += float(ability.get("power1", 0.0))
-            elif kind == "ParalysisSlayer" and enemy_conditions.has("paralysis"):
+            elif kind == "ParalysisSlayer" and conditions.has("paralysis"):
                 bonus += float(ability.get("power1", 0.0))
     return 1.0 + bonus
 
@@ -451,7 +508,10 @@ func get_funnel_snapshots() -> Array[Dictionary]:
 func trigger_enemy_action(action_id: String) -> int:
     if status != "running" or not enemy_active:
         return 0
-    return _invoke_enemy_action(action_id)
+    var actor := _primary_enemy_instance()
+    if actor.is_empty():
+        return 0
+    return _invoke_enemy_action(actor, action_id)
 
 func build_result(result_id: String) -> Dictionary:
     if status != "cleared" or result_id.is_empty() or run_id.is_empty():
@@ -467,7 +527,8 @@ func build_result(result_id: String) -> Dictionary:
     }
 
 func _enter_zone(zone_index: int) -> void:
-    _deactivate_enemy()
+    _deactivate_all_enemies()
+    emitter_states.clear()
     var zones: Array = quest["zones"]
     if zone_index >= zones.size():
         _clear("all_zones_cleared")
@@ -475,6 +536,7 @@ func _enter_zone(zone_index: int) -> void:
     current_zone_index = zone_index
     objective_progress = 0
     frames_until_spawn = 0
+    spawn_interval_frames = 0
     var zone: Dictionary = zones[zone_index]
     var objective: Dictionary = zone["objective"]
     objective_kind = str(objective["kind"])
@@ -484,45 +546,130 @@ func _enter_zone(zone_index: int) -> void:
         if objective_target <= 0 or emitters.is_empty():
             _fail("invalid_zako_zone")
             return
-        var emitter: Dictionary = emitters[0]
-        current_enemy_id = str(emitter["enemy_id"])
-        current_enemy_kind = "zako"
-        spawn_interval_frames = int(emitter["interval_frames"])
-        _spawn_zone_enemy()
+        for emitter_index in range(emitters.size()):
+            var emitter: Dictionary = emitters[emitter_index]
+            emitter_states.append({
+                "index": emitter_index,
+                "enemy_id": str(emitter["enemy_id"]),
+                "interval_frames": maxi(0, int(emitter.get("interval_frames", 0))),
+                "frames_until_spawn": 0,
+                "active_serial": 0,
+                "spawn_count": 0,
+            })
+        spawn_interval_frames = int(emitter_states[0]["interval_frames"])
+        for emitter_index in range(emitter_states.size()):
+            if objective_progress + enemy_instances.size() >= objective_target:
+                break
+            _spawn_emitter_enemy(emitter_index)
+        _sync_primary_enemy_view()
         return
     if objective_kind == "boss_clear":
         var bosses: Array = zone["bosses"]
         if bosses.is_empty():
             _fail("invalid_boss_zone")
             return
-        var boss: Dictionary = bosses[0]
-        objective_target = 1
-        current_enemy_id = str(boss["enemy_id"])
-        current_enemy_kind = str(boss["kind"])
-        spawn_interval_frames = 0
-        _spawn_zone_enemy()
+        objective_target = bosses.size()
+        for boss_index in range(bosses.size()):
+            var boss: Dictionary = bosses[boss_index]
+            _spawn_zone_enemy(
+                str(boss["enemy_id"]),
+                str(boss["kind"]),
+                -1,
+                boss_index,
+                bosses.size()
+            )
+        _sync_primary_enemy_view()
         return
     _fail("unsupported_objective")
 
-func _spawn_zone_enemy() -> void:
-    if status != "running":
+func _step_emitters() -> void:
+    if objective_kind != "zako_kill":
         return
-    var enemy_definition := _find_enemy_definition(current_enemy_id, current_enemy_kind)
+    for emitter_index in range(emitter_states.size()):
+        var emitter: Dictionary = emitter_states[emitter_index]
+        if int(emitter["active_serial"]) != 0:
+            continue
+        if objective_progress + enemy_instances.size() >= objective_target:
+            continue
+        if int(emitter["frames_until_spawn"]) > 0:
+            emitter["frames_until_spawn"] = int(emitter["frames_until_spawn"]) - 1
+        if int(emitter["frames_until_spawn"]) == 0:
+            _spawn_emitter_enemy(emitter_index)
+    frames_until_spawn = _minimum_emitter_cooldown()
+
+func _spawn_emitter_enemy(emitter_index: int) -> void:
+    if emitter_index < 0 or emitter_index >= emitter_states.size():
+        return
+    var emitter: Dictionary = emitter_states[emitter_index]
+    if int(emitter["active_serial"]) != 0:
+        return
+    var serial := _spawn_zone_enemy(
+        str(emitter["enemy_id"]),
+        "zako",
+        emitter_index,
+        emitter_index,
+        emitter_states.size()
+    )
+    if serial <= 0:
+        return
+    emitter["active_serial"] = serial
+    emitter["frames_until_spawn"] = 0
+    emitter["spawn_count"] = int(emitter["spawn_count"]) + 1
+
+func _spawn_zone_enemy(
+    enemy_id: String,
+    enemy_kind: String,
+    emitter_index: int = -1,
+    spawn_ordinal: int = 0,
+    spawn_count: int = 1
+) -> int:
+    if status != "running":
+        return 0
+    var enemy_definition := _find_enemy_definition(enemy_id, enemy_kind)
     if enemy_definition.is_empty():
         _fail("missing_enemy_definition")
-        return
+        return 0
     var fallback_enemy: Dictionary = quest["enemy"]
     var fallback_position: Array = fallback_enemy["position"]
-    enemy.position = Vector2(float(fallback_position[0]), float(fallback_position[1]))
-    enemy.radius = float(fallback_enemy["radius"])
-    world.add_body(enemy)
-    current_enemy_definition = enemy_definition.duplicate(true)
-    enemy_conditions.clear()
-    enemy_hp = int(enemy_definition["max_hp"])
-    _prepare_enemy_action_schedule(enemy_definition)
+    var enemy_body: SimBody = SimBodyScript.new()
+    var serial := next_enemy_serial
+    next_enemy_serial += 1
+    enemy_body.tag = "enemy:%d" % serial
+    enemy_body.dynamic = false
+    enemy_body.radius = float(fallback_enemy["radius"])
+    enemy_body.restitution = 0.9
+    var base_position := Vector2(float(fallback_position[0]), float(fallback_position[1]))
+    var centered_index := float(spawn_ordinal) - float(maxi(1, spawn_count) - 1) * 0.5
+    enemy_body.position = base_position + Vector2(centered_index * 96.0, 0.0)
+    var actor: Dictionary = {
+        "serial": serial,
+        "emitter_index": emitter_index,
+        "enemy_id": enemy_id,
+        "kind": enemy_kind,
+        "definition": enemy_definition.duplicate(true),
+        "body": enemy_body,
+        "hp": int(enemy_definition["max_hp"]),
+        "max_hp": int(enemy_definition["max_hp"]),
+        "conditions": {},
+        "action_sequence": [],
+        "action_index": 0,
+        "action_frames_until_fire": 0,
+        "state_machine": {},
+        "state_id": "",
+        "state_frames_remaining": 0,
+        "move_start": Vector2.ZERO,
+        "move_target": Vector2.ZERO,
+        "move_total_frames": 0,
+        "move_elapsed_frames": 0,
+    }
+    enemy_instances.append(actor)
+    world.add_body(enemy_body)
+    _prepare_enemy_action_schedule(actor)
     enemy_spawn_serial += 1
-    enemy_active = true
-    frames_until_spawn = 0
+    if primary_enemy_serial == 0:
+        primary_enemy_serial = serial
+    _sync_primary_enemy_view()
+    return serial
 
 func _find_enemy_definition(master_id: String, kind: String) -> Dictionary:
     var enemies: Dictionary = quest["enemies"]
@@ -532,17 +679,19 @@ func _find_enemy_definition(master_id: String, kind: String) -> Dictionary:
             return enemy_definition
     return {}
 
-func _prepare_enemy_action_schedule(enemy_definition: Dictionary) -> void:
-    enemy_action_sequence = []
-    enemy_action_index = 0
-    enemy_action_frames_until_fire = 0
-    enemy_state_machine = {}
-    enemy_state_id = ""
-    enemy_state_frames_remaining = 0
+func _prepare_enemy_action_schedule(actor: Dictionary) -> void:
+    actor["action_sequence"] = []
+    actor["action_index"] = 0
+    actor["action_frames_until_fire"] = 0
+    actor["state_machine"] = {}
+    actor["state_id"] = ""
+    actor["state_frames_remaining"] = 0
+    var enemy_definition: Dictionary = actor["definition"]
     var state_machine_value: Variant = enemy_definition.get("action_state_machine", {})
     if state_machine_value is Dictionary and not state_machine_value.is_empty():
-        enemy_state_machine = state_machine_value.duplicate(true)
-        _enter_enemy_state(str(enemy_state_machine.get("initial_state_id", "")))
+        actor["state_machine"] = state_machine_value.duplicate(true)
+        var state_machine: Dictionary = actor["state_machine"]
+        _enter_enemy_state(actor, str(state_machine.get("initial_state_id", "")))
         return
     var schedule_value: Variant = enemy_definition.get("action_schedule", {})
     if not schedule_value is Dictionary:
@@ -551,86 +700,141 @@ func _prepare_enemy_action_schedule(enemy_definition: Dictionary) -> void:
     var sequence_value: Variant = schedule.get("sequence", [])
     if not sequence_value is Array:
         return
-    enemy_action_sequence = sequence_value.duplicate()
-    enemy_action_frames_until_fire = maxi(1, int(schedule.get("initial_delay_frames", 1)))
+    actor["action_sequence"] = sequence_value.duplicate()
+    actor["action_frames_until_fire"] = maxi(1, int(schedule.get("initial_delay_frames", 1)))
 
 func _step_enemy_actions() -> void:
-    if not enemy_state_machine.is_empty():
-        _step_enemy_state_machine()
-        return
-    if enemy_action_sequence.is_empty():
-        return
-    enemy_action_frames_until_fire -= 1
-    if enemy_action_frames_until_fire > 0:
-        return
-    var action_id := str(enemy_action_sequence[enemy_action_index % enemy_action_sequence.size()])
-    _invoke_enemy_action(action_id)
-    enemy_action_index += 1
-    var schedule: Dictionary = current_enemy_definition.get("action_schedule", {})
-    enemy_action_frames_until_fire = maxi(1, int(schedule.get("interval_frames", 1)))
+    var primary := _primary_enemy_instance()
+    if not primary.is_empty():
+        primary["action_frames_until_fire"] = enemy_action_frames_until_fire
+    for serial_variant in _active_enemy_serials():
+        var actor := _find_enemy_instance(int(serial_variant))
+        if actor.is_empty():
+            continue
+        _step_enemy_actor_actions(actor)
+    _sync_primary_enemy_view()
 
-func _step_enemy_state_machine() -> void:
-    if enemy_state_id.is_empty():
+func _step_enemy_actor_actions(actor: Dictionary) -> void:
+    var state_machine: Dictionary = actor["state_machine"]
+    if not state_machine.is_empty():
+        _step_enemy_state_machine(actor)
         return
-    if enemy_move_total_frames > 0:
-        enemy_move_elapsed_frames = mini(enemy_move_total_frames, enemy_move_elapsed_frames + 1)
-        enemy.position = enemy_move_start.lerp(enemy_move_target, float(enemy_move_elapsed_frames) / float(enemy_move_total_frames))
-    enemy_state_frames_remaining -= 1
-    if enemy_state_frames_remaining > 0:
+    var action_sequence: Array = actor["action_sequence"]
+    if action_sequence.is_empty():
         return
-    var states: Dictionary = enemy_state_machine["states"]
-    var state: Dictionary = states[enemy_state_id]
-    _enter_enemy_state(str(state["next_state"]))
+    actor["action_frames_until_fire"] = int(actor["action_frames_until_fire"]) - 1
+    if int(actor["action_frames_until_fire"]) > 0:
+        return
+    var action_index := int(actor["action_index"])
+    var action_id := str(action_sequence[action_index % action_sequence.size()])
+    _invoke_enemy_action(actor, action_id)
+    actor["action_index"] = action_index + 1
+    var definition: Dictionary = actor["definition"]
+    var schedule: Dictionary = definition.get("action_schedule", {})
+    actor["action_frames_until_fire"] = maxi(1, int(schedule.get("interval_frames", 1)))
 
-func _enter_enemy_state(state_id: String) -> void:
-    var states_value: Variant = enemy_state_machine.get("states", {})
+func _step_enemy_state_machine(actor: Dictionary = {}) -> void:
+    if actor.is_empty():
+        actor = _primary_enemy_instance()
+    if actor.is_empty():
+        return
+    if str(actor["state_id"]).is_empty():
+        return
+    var enemy_body: SimBody = actor["body"]
+    var move_total_frames := int(actor["move_total_frames"])
+    if move_total_frames > 0:
+        actor["move_elapsed_frames"] = mini(move_total_frames, int(actor["move_elapsed_frames"]) + 1)
+        enemy_body.position = Vector2(actor["move_start"]).lerp(Vector2(actor["move_target"]), float(actor["move_elapsed_frames"]) / float(move_total_frames))
+    actor["state_frames_remaining"] = int(actor["state_frames_remaining"]) - 1
+    if int(actor["state_frames_remaining"]) > 0:
+        return
+    var state_machine: Dictionary = actor["state_machine"]
+    var states: Dictionary = state_machine["states"]
+    var state: Dictionary = states[str(actor["state_id"])]
+    _enter_enemy_state(actor, str(state["next_state"]))
+
+func _enter_enemy_state(actor_or_state: Variant, requested_state_id: String = "") -> void:
+    var actor: Dictionary
+    var state_id: String
+    if actor_or_state is Dictionary:
+        actor = actor_or_state
+        state_id = requested_state_id
+    else:
+        actor = _primary_enemy_instance()
+        state_id = str(actor_or_state)
+    if actor.is_empty():
+        return
+    var state_machine: Dictionary = actor["state_machine"]
+    var states_value: Variant = state_machine.get("states", {})
     if not states_value is Dictionary or not states_value.has(state_id):
         _fail("missing_enemy_state")
         return
     var states: Dictionary = states_value
     var state: Dictionary = states[state_id]
-    enemy_state_id = state_id
+    actor["state_id"] = state_id
     var termination: Dictionary = state["termination"]
-    enemy_move_total_frames = 0
-    enemy_move_elapsed_frames = 0
+    actor["move_total_frames"] = 0
+    actor["move_elapsed_frames"] = 0
     if str(termination["kind"]) == "move":
-        enemy_state_frames_remaining = maxi(1, int(termination["fallback_frames"]))
+        actor["state_frames_remaining"] = maxi(1, int(termination["fallback_frames"]))
         var target_name := str(termination.get("target", ""))
         var markers: Dictionary = quest["terrain_runtime"]["markers"]
         if not markers.has(target_name):
             _fail("missing_terrain_marker")
             return
         var target_value: Array = markers[target_name]
-        enemy_move_start = enemy.position
-        enemy_move_target = Vector2(float(target_value[0]), float(target_value[1]))
-        enemy_move_total_frames = enemy_state_frames_remaining
+        var enemy_body: SimBody = actor["body"]
+        actor["move_start"] = enemy_body.position
+        actor["move_target"] = Vector2(float(target_value[0]), float(target_value[1]))
+        actor["move_total_frames"] = int(actor["state_frames_remaining"])
     else:
-        enemy_state_frames_remaining = maxi(1, int(termination["value"]))
+        actor["state_frames_remaining"] = maxi(1, int(termination["value"]))
     if state.has("action_id"):
-        _invoke_enemy_action(str(state["action_id"]))
+        _invoke_enemy_action(actor, str(state["action_id"]))
 
-func _invoke_enemy_action(action_id: String) -> int:
+func _invoke_enemy_action(actor_or_action: Variant, requested_action_id: String = "") -> int:
+    var actor: Dictionary
+    var action_id: String
+    if actor_or_action is Dictionary:
+        actor = actor_or_action
+        action_id = requested_action_id
+    else:
+        actor = _primary_enemy_instance()
+        action_id = str(actor_or_action)
+    if actor.is_empty():
+        return 0
     var action := _find_action_definition(action_id)
     if action.is_empty():
         return 0
     last_enemy_action_id = action_id
     var corrections: Dictionary = quest["battle"]["atk_corrections"]
-    var correction_name := "boss" if current_enemy_kind != "zako" else "zako"
+    var enemy_kind := str(actor["kind"])
+    var correction_name := "boss" if enemy_kind != "zako" else "zako"
+    var definition: Dictionary = actor["definition"]
+    var formula: Dictionary = definition.get("atk_formula", {})
+    var reference_party_hp := maxi(1, int(formula.get("party_hp_level_1", player_max_hp)))
+    var enemy_body: SimBody = actor["body"]
     var created: int = action_executor.start_action(
         action,
-        enemy.position,
+        enemy_body.position,
         player.position,
-        int(current_enemy_definition.get("atk", 1)),
-        float(corrections.get(correction_name, 1.0))
+        int(definition.get("atk", 1)),
+        float(corrections.get(correction_name, 1.0)),
+        int(actor["serial"]),
+        reference_party_hp
     )
     var spawn_events: Array = action_executor.consume_spawn_events()
     for spawn_event_variant in spawn_events:
         var spawn_event: Dictionary = spawn_event_variant
-        _spawn_funnel_entity(spawn_event)
+        _spawn_funnel_entity(spawn_event, actor)
     funnel_spawn_count += spawn_events.size()
     return created
 
-func _spawn_funnel_entity(spawn_event: Dictionary) -> void:
+func _spawn_funnel_entity(spawn_event: Dictionary, owner_actor: Dictionary = {}) -> void:
+    if owner_actor.is_empty():
+        owner_actor = _find_enemy_instance(int(spawn_event.get("source_serial", primary_enemy_serial)))
+    if owner_actor.is_empty():
+        return
     var funnel_definition := _find_enemy_definition(str(spawn_event.get("enemy_id", "")), "funnel")
     if funnel_definition.is_empty():
         return
@@ -640,20 +844,23 @@ func _spawn_funnel_entity(spawn_event: Dictionary) -> void:
     funnel_body.dynamic = false
     funnel_body.radius = 18.0
     funnel_body.restitution = 0.9
-    funnel_body.position = enemy.position
+    var owner_body: SimBody = owner_actor["body"]
+    funnel_body.position = owner_body.position
     world.add_body(funnel_body)
     funnel_entities.append({
         "serial": next_funnel_serial,
+        "owner_serial": int(owner_actor["serial"]),
         "enemy_id": str(spawn_event.get("enemy_id", "")),
         "level": int(spawn_event.get("level", funnel_definition.get("level", 1))),
         "atk": int(funnel_definition.get("atk", 1)),
+        "reference_party_hp": maxi(1, int(funnel_definition.get("atk_formula", {}).get("party_hp_level_1", player_max_hp))),
         "hp": int(funnel_definition.get("max_hp", 1)),
         "max_hp": int(funnel_definition.get("max_hp", 1)),
         "body": funnel_body,
         "radius": 18.0,
         "orbit_angle": float(next_funnel_serial - 1) * TAU / 3.0,
         "orbit_radius": 96.0,
-        "position": enemy.position,
+        "position": owner_body.position,
         "frames_until_action": maxi(1, int(schedule.get("initial_delay_frames", 120))),
         "action_interval_frames": maxi(1, int(schedule.get("interval_frames", 180))),
         "action_id": str(funnel_definition["action_assets"][0]),
@@ -661,9 +868,17 @@ func _spawn_funnel_entity(spawn_event: Dictionary) -> void:
     next_funnel_serial += 1
 
 func _step_funnel_entities() -> void:
-    for funnel in funnel_entities:
+    for index in range(funnel_entities.size() - 1, -1, -1):
+        var funnel: Dictionary = funnel_entities[index]
+        var owner_actor := _find_enemy_instance(int(funnel.get("owner_serial", 0)))
+        if owner_actor.is_empty():
+            world.remove_body(funnel["body"])
+            action_executor.remove_source(-int(funnel["serial"]))
+            funnel_entities.remove_at(index)
+            continue
+        var owner_body: SimBody = owner_actor["body"]
         funnel["orbit_angle"] = float(funnel["orbit_angle"]) + 0.02
-        funnel["position"] = enemy.position + Vector2.RIGHT.rotated(float(funnel["orbit_angle"])) * float(funnel["orbit_radius"])
+        funnel["position"] = owner_body.position + Vector2.RIGHT.rotated(float(funnel["orbit_angle"])) * float(funnel["orbit_radius"])
         var funnel_body: SimBody = funnel["body"]
         funnel_body.position = Vector2(funnel["position"])
         funnel["frames_until_action"] = int(funnel["frames_until_action"]) - 1
@@ -678,7 +893,9 @@ func _step_funnel_entities() -> void:
                 Vector2(funnel["position"]),
                 player.position,
                 int(funnel["atk"]),
-                float(corrections.get("funnel", 1.0))
+                float(corrections.get("funnel", 1.0)),
+                -int(funnel["serial"]),
+                int(funnel["reference_party_hp"])
             )
         funnel["frames_until_action"] = int(funnel["action_interval_frames"])
 
@@ -692,6 +909,7 @@ func _apply_funnel_damage(serial: int, damage: int) -> void:
         funnel["hp"] = maxi(0, int(funnel["hp"]) - damage)
         if int(funnel["hp"]) == 0:
             world.remove_body(funnel["body"])
+            action_executor.remove_source(-serial)
             funnel_entities.remove_at(index)
         return
 
@@ -711,16 +929,120 @@ func _default_party_hp() -> int:
         total += int(character.get("hp", 0))
     return total
 
-func _apply_enemy_damage(damage: int) -> void:
-    if status != "running" or not enemy_active:
-        return
-    enemy_hp = maxi(0, enemy_hp - damage)
-    if enemy_hp > 0:
-        return
-    _complete_active_enemy()
+func _active_enemy_serials() -> Array[int]:
+    var serials: Array[int] = []
+    for actor in enemy_instances:
+        serials.append(int(actor["serial"]))
+    return serials
 
-func _complete_active_enemy() -> void:
-    _deactivate_enemy()
+func _active_funnel_serials() -> Array[int]:
+    var serials: Array[int] = []
+    for funnel in funnel_entities:
+        serials.append(int(funnel["serial"]))
+    return serials
+
+func _find_enemy_instance(serial: int) -> Dictionary:
+    for actor in enemy_instances:
+        if int(actor["serial"]) == serial:
+            return actor
+    return {}
+
+func _primary_enemy_instance() -> Dictionary:
+    if primary_enemy_serial != 0:
+        var current := _find_enemy_instance(primary_enemy_serial)
+        if not current.is_empty():
+            return current
+    if enemy_instances.is_empty():
+        return {}
+    var primary: Dictionary = enemy_instances[0]
+    primary_enemy_serial = int(primary["serial"])
+    return primary
+
+func _conditions_for_body(body: SimBody) -> Dictionary:
+    if body == null or not body.tag.begins_with("enemy:"):
+        return {}
+    var actor := _find_enemy_instance(int(body.tag.trim_prefix("enemy:")))
+    if actor.is_empty():
+        return {}
+    return actor["conditions"]
+
+func _sync_primary_enemy_view() -> void:
+    var primary := _primary_enemy_instance()
+    if primary.is_empty():
+        primary_enemy_serial = 0
+        enemy_active = false
+        enemy_hp = 0
+        enemy_conditions.clear()
+        current_enemy_definition = {}
+        enemy_action_sequence = []
+        enemy_action_frames_until_fire = 0
+        enemy_state_machine = {}
+        enemy_state_id = ""
+        enemy_state_frames_remaining = 0
+        frames_until_spawn = _minimum_emitter_cooldown()
+        return
+    var body: SimBody = primary["body"]
+    enemy = body
+    enemy_active = true
+    current_enemy_id = str(primary["enemy_id"])
+    current_enemy_kind = str(primary["kind"])
+    enemy_hp = int(primary["hp"])
+    enemy_conditions = primary["conditions"]
+    current_enemy_definition = primary["definition"]
+    enemy_action_sequence = primary["action_sequence"]
+    enemy_action_frames_until_fire = int(primary["action_frames_until_fire"])
+    enemy_action_index = int(primary["action_index"])
+    enemy_state_machine = primary["state_machine"]
+    enemy_state_id = str(primary["state_id"])
+    enemy_state_frames_remaining = int(primary["state_frames_remaining"])
+    enemy_move_start = Vector2(primary["move_start"])
+    enemy_move_target = Vector2(primary["move_target"])
+    enemy_move_total_frames = int(primary["move_total_frames"])
+    enemy_move_elapsed_frames = int(primary["move_elapsed_frames"])
+    if int(primary.get("emitter_index", -1)) >= 0:
+        var emitter_index := int(primary["emitter_index"])
+        if emitter_index < emitter_states.size():
+            frames_until_spawn = int(emitter_states[emitter_index]["frames_until_spawn"])
+            spawn_interval_frames = int(emitter_states[emitter_index]["interval_frames"])
+    else:
+        frames_until_spawn = _minimum_emitter_cooldown()
+
+func _minimum_emitter_cooldown() -> int:
+    var minimum := 0
+    for emitter in emitter_states:
+        if int(emitter.get("active_serial", 0)) != 0:
+            continue
+        var remaining := int(emitter.get("frames_until_spawn", 0))
+        if remaining <= 0:
+            continue
+        if minimum == 0 or remaining < minimum:
+            minimum = remaining
+    return minimum
+
+func _apply_enemy_damage(damage: int) -> void:
+    var primary := _primary_enemy_instance()
+    if primary.is_empty():
+        return
+    _apply_enemy_damage_to_serial(int(primary["serial"]), damage)
+
+func _apply_enemy_damage_to_serial(serial: int, damage: int) -> void:
+    if status != "running" or damage <= 0:
+        return
+    var actor := _find_enemy_instance(serial)
+    if actor.is_empty():
+        return
+    actor["hp"] = maxi(0, int(actor["hp"]) - damage)
+    if int(actor["hp"]) > 0:
+        _sync_primary_enemy_view()
+        return
+    _complete_enemy_instance(serial)
+
+func _complete_enemy_instance(serial: int) -> void:
+    var actor := _find_enemy_instance(serial)
+    if actor.is_empty():
+        return
+    var emitter_index := int(actor.get("emitter_index", -1))
+    _deactivate_enemy_instance(serial)
     objective_progress += 1
     if objective_progress >= objective_target:
         if objective_kind == "boss_clear":
@@ -728,32 +1050,91 @@ func _complete_active_enemy() -> void:
         else:
             _enter_zone(current_zone_index + 1)
         return
-    frames_until_spawn = spawn_interval_frames
+    if emitter_index >= 0 and emitter_index < emitter_states.size():
+        var emitter: Dictionary = emitter_states[emitter_index]
+        emitter["frames_until_spawn"] = int(emitter["interval_frames"])
+    _sync_primary_enemy_view()
 
-func _deactivate_enemy() -> void:
-    enemy_active = false
-    world.remove_body(enemy)
-    action_executor.clear()
-    enemy_conditions.clear()
+func _deactivate_enemy_instance(serial: int) -> void:
+    var actor_index := -1
+    for index in range(enemy_instances.size()):
+        if int(enemy_instances[index]["serial"]) == serial:
+            actor_index = index
+            break
+    if actor_index < 0:
+        return
+    var actor: Dictionary = enemy_instances[actor_index]
+    world.remove_body(actor["body"])
+    action_executor.remove_source(serial)
+    for index in range(funnel_entities.size() - 1, -1, -1):
+        var funnel: Dictionary = funnel_entities[index]
+        if int(funnel.get("owner_serial", 0)) != serial:
+            continue
+        world.remove_body(funnel["body"])
+        action_executor.remove_source(-int(funnel["serial"]))
+        funnel_entities.remove_at(index)
+    var emitter_index := int(actor.get("emitter_index", -1))
+    if emitter_index >= 0 and emitter_index < emitter_states.size():
+        emitter_states[emitter_index]["active_serial"] = 0
+    enemy_instances.remove_at(actor_index)
+    if primary_enemy_serial == serial:
+        primary_enemy_serial = 0
+    _sync_primary_enemy_view()
+
+func _deactivate_all_enemies() -> void:
+    for actor in enemy_instances:
+        world.remove_body(actor["body"])
+        action_executor.remove_source(int(actor["serial"]))
     for funnel in funnel_entities:
         world.remove_body(funnel["body"])
+        action_executor.remove_source(-int(funnel["serial"]))
+    enemy_instances.clear()
     funnel_entities.clear()
+    action_executor.clear()
+    primary_enemy_serial = 0
+    enemy_active = false
+    enemy_hp = 0
+    enemy_conditions.clear()
     enemy_action_sequence = []
     enemy_action_frames_until_fire = 0
     enemy_state_machine = {}
     enemy_state_id = ""
     enemy_state_frames_remaining = 0
     current_enemy_definition = {}
-    enemy.radius = 0.0
-    enemy_hp = 0
+    if enemy != null:
+        enemy.radius = 0.0
+    _sync_primary_enemy_view()
+
+func _deactivate_enemy() -> void:
+    _deactivate_all_enemies()
+
+func _reset_terminal_enemy_facade() -> void:
+    current_enemy_id = ""
+    current_enemy_kind = ""
+    enemy_action_index = 0
+    enemy_move_start = Vector2.ZERO
+    enemy_move_target = Vector2.ZERO
+    enemy_move_total_frames = 0
+    enemy_move_elapsed_frames = 0
+    frames_until_spawn = 0
+    spawn_interval_frames = 0
+    emitter_states.clear()
+    if enemy != null:
+        enemy.tag = "enemy:0"
+        enemy.position = Vector2.ZERO
+        enemy.radius = 0.0
 
 func _clear(reason: String) -> void:
-    _deactivate_enemy()
+    _deactivate_all_enemies()
+    pending_player_skill_events.clear()
+    _reset_terminal_enemy_facade()
     status = "cleared"
     status_reason = reason
 
 func _fail(reason: String) -> void:
-    _deactivate_enemy()
+    _deactivate_all_enemies()
+    pending_player_skill_events.clear()
+    _reset_terminal_enemy_facade()
     frames_until_spawn = 0
     status = "failed"
     status_reason = reason

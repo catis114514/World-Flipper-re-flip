@@ -5,7 +5,15 @@ const StaticContentRepository = preload("res://src/content/static_content_reposi
 func run(t) -> void:
     var repository = StaticContentRepository.new()
     t.assert_equal(repository.load_fixture("res://content/fixtures/quest_1001002.json"), OK, "CN fixture loads")
+    t.assert_equal(repository.load_fixture("res://content/fixtures/quest_1002001.json"), OK, "second CN fixture loads")
     var quest: Dictionary = repository.get_quest("1001002")
+    var second_quest: Dictionary = repository.get_quest("1002001")
+    t.assert_equal(second_quest["name"], "追蘑菇1", "second fixture keeps the canonical CN quest name")
+    t.assert_equal(second_quest["zones"][0]["objective"], {"kind": "zako_kill", "count": 20}, "second fixture keeps the twenty-zako objective")
+    t.assert_equal(second_quest["zones"][0]["zako_emitters"].size(), 2, "second fixture retains both original emitters")
+    t.assert_equal(second_quest["zones"][0]["zako_emitters"][1], {"enemy_id": "spirit", "interval_frames": 120}, "second emitter keeps Spirit and its canonical interval")
+    t.assert_equal(second_quest["enemies"]["spirit_boss"]["action_state_machine"]["states"].size(), 31, "Spirit boss keeps its complete state cycle")
+    t.assert_equal(second_quest["enemies"]["spirit_boss"]["action_state_machine"]["states"]["skill1_charge1"]["termination"]["value"], 240, "Spirit time variable resolves from the canonical level threshold")
     t.assert_equal(quest["schema_version"], 2, "fixture schema records canonical battle graph")
     t.assert_equal(quest["name"], "开始的草原", "CN quest name is canonical")
     t.assert_equal(quest["entry_stamina"], 6, "CN quest stamina is canonical")
@@ -101,6 +109,13 @@ func run(t) -> void:
     var missing_action := quest.duplicate(true)
     missing_action["enemies"]["slango_zako"]["action_assets"][0] = "missing_action"
     _assert_invalid_fixture(t, "missing-action", missing_action, "missing action reference is rejected")
+
+    var missing_funnel_target := quest.duplicate(true)
+    for action in missing_funnel_target["action_assets"]:
+        for runtime in action["runtime"]:
+            if str(runtime.get("kind", "")) == "spawn_funnel":
+                runtime["enemy_id"] = "missing_funnel"
+    _assert_invalid_fixture(t, "missing-funnel-target", missing_funnel_target, "spawn-funnel runtime must resolve to a funnel definition")
 
     var unsupported_objective := quest.duplicate(true)
     unsupported_objective["zones"][0]["objective"] = {"kind": "unknown"}

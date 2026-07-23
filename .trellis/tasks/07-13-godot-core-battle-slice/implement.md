@@ -72,6 +72,16 @@ Rollback point: simulation remains independent of Godot nodes; presentation work
 - Windows debug and release exports succeeded inside `wf-vm`; interactive Windows playthrough remains pending.
 - Terrain runtime adapter now includes validated fallback segments and p1/p2/p3 markers, deterministic segment collision, marker-driven boss movement, and functional rendering. Exact recovered terrain and interactive Windows verification remain pending.
 
+## Latest Verification (2026-07-23, second converted battle)
+
+- `convert_core_fixture.py` accepts `--quest-id`; `1001002` remains byte-identical and `1002001` now has a checked schema-2 fixture.
+- Added explicit `slango`/`spirit` adapters, complete 31-state Spirit boss conversion, level-threshold `charge1=240`, five checked enemy Action DSL assets, and fixed-point funnel dependency validation.
+- `BattleSimulation` now owns multiple serial-tagged enemy instances and one-active-enemy-per-emitter scheduling. Quest `1002001` runs independent 60/120-frame emitters, a 20-kill objective, then the 18295-HP Spirit boss.
+- Delayed player events snapshot enemy/funnel serials; owner teardown removes owned projectiles/funnels; poison/delayed kills retain the complete emitter cooldown; terminal events cannot mutate cleared/failed state.
+- Main progression now runs `1001001 story -> 1001002 battle -> 1001003 story -> 1002001 battle`; unsupported `1002002` blocks explicitly while replay selects the latest cleared converted fixture.
+- Verification: core converter 5/5; offline catalog determinism unchanged; server-security and gacha-position regressions pass; Godot 518 assertions twice from clean data roots; two-battle scene flow, editor scan, and 120-frame main-scene smoke pass.
+- Exact terrain/spawn animation, broad enemy adapter coverage, original visual assets, and interactive Windows verification remain pending.
+
 ## Risky Areas
 
 - Physics update order and numeric differences between ActionScript/Haxe and GDScript.

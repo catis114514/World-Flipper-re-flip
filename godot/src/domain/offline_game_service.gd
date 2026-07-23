@@ -2,6 +2,7 @@ class_name OfflineGameService
 extends RefCounted
 
 const MAX_CURRENCY := 2147483647
+const QuestProgression = preload("res://src/domain/quest_progression.gd")
 
 func settle_stamina(profile: ProfileData, now_unix: int, cap: int = 50, interval_seconds: int = 300) -> int:
     var state := profile.stamina_state
@@ -38,23 +39,26 @@ func save_party(profile: ProfileData, members: Array) -> bool:
     profile.party = normalized
     return true
 
-func get_next_main_quest(quests: Dictionary, progress: Dictionary) -> Dictionary:
-    var ordered: Array = quests.values()
-    ordered.sort_custom(func(a, b):
-        for field in ["chapter_id", "stage_node_id", "order", "id"]:
-            if int(a.get(field, 0)) != int(b.get(field, 0)):
-                return int(a.get(field, 0)) < int(b.get(field, 0))
-        return false
+func get_next_main_quest(
+    chapters: Array,
+    stage_nodes: Dictionary,
+    quests: Dictionary,
+    progress: Dictionary,
+    roster: Array = [],
+    now_unix: int = 0
+) -> Dictionary:
+    var resolved: Dictionary = QuestProgression.find_next_main_quest(
+        chapters, stage_nodes, quests, progress, roster, now_unix
     )
-    for quest_value in ordered:
-        if not quest_value is Dictionary: continue
-        var quest: Dictionary = quest_value
-        var quest_id := str(quest.get("id", ""))
-        if bool(progress.get(quest_id, {}).get("cleared", false)): continue
-        var prerequisite := str(quest.get("prerequisite_id", ""))
-        if not prerequisite.is_empty() and not bool(progress.get(prerequisite, {}).get("cleared", false)): continue
-        return quest.duplicate(true)
-    return {}
+    if resolved.is_empty():
+        return {}
+    var quest_value: Variant = resolved.get("quest", null)
+    if not quest_value is Dictionary:
+        return {}
+    var result: Dictionary = quest_value.duplicate(true)
+    result["resolved_chapter"] = resolved.get("chapter", {}).duplicate(true)
+    result["resolved_stage_node"] = resolved.get("stage_node", {}).duplicate(true)
+    return result
 
 func complete_story(profile: ProfileData, quest: Dictionary, operation_id: String) -> Dictionary:
     if operation_id.is_empty() or str(quest.get("kind", "")) != "story": return {}

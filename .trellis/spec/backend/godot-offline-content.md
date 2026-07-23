@@ -13,6 +13,7 @@ python3 godot/tools/convert_core_fixture.py \
   --repo-root <server-emulator-root> \
   --wf-assets-root <wf-assets-cn-root> \
   --apk <client-apk> \
+  --quest-id <main-quest-id> \
   --output <fixture-json>
 ```
 
@@ -22,6 +23,7 @@ Runtime boundary:
 StaticContentRepository.load_fixture(path: String) -> Error
 StaticContentRepository.get_quest(quest_id: String) -> Dictionary
 BattleSimulation.new(quest: Dictionary, session_run_id: String)
+BattleSimulation.get_enemy_snapshots() -> Array[Dictionary]
 BattleSimulation.build_result(result_id: String) -> Dictionary
 ProfileData.replace_from(source: ProfileData) -> void
 ```
@@ -43,6 +45,15 @@ Battle start builds an immutable party snapshot before persisting `active_run`. 
 
 Domain transactions mutate a staged `ProfileData`, save that staged value, and then call `live_profile.replace_from(staged)`. The replacement must deep-copy every persisted field from one central owner; services must not maintain partial field-copy lists.
 
+Multi-emitter battle ownership:
+
+- Every active objective enemy owns a stable integer `serial`, `SimBody` tag `enemy:<serial>`, HP, conditions, action schedule/state machine, movement state, definition snapshot, and optional `emitter_index`.
+- Each zako emitter owns at most one active enemy. Emitters update before skill/poison/collision damage each fixed step, so a death always starts the complete configured cooldown; one damage source must not shorten it by one frame.
+- The initial 90-frame original spawn-point subscription animation is not yet ported. Immediate first spawn and deterministic horizontal separation are explicit terrain/presentation adapters; independent 60/120-frame post-death cooldowns are authoritative fixture data.
+- Enemy projectiles and funnel spawn events retain their owner serial. Owner death removes only that owner's projectiles/funnels; zone/terminal teardown removes all instances.
+- Delayed player events snapshot enemy and funnel serials at cast time. They never acquire a later spawn or a new zone generation, and terminal state clears the remaining event queue.
+- Legacy fields (`enemy`, `enemy_hp`, `enemy_state_id`, and related diagnostics) are a compatibility view of one primary active instance. New simulation/presentation code consumes `get_enemy_snapshots()` as the authoritative multi-entity boundary.
+
 ## 4. Validation & Error Matrix
 
 | Condition | Required behavior |
@@ -51,6 +62,9 @@ Domain transactions mutate a staged `ProfileData`, save that staged value, and t
 | Duplicate quest, zone, or action ID | `ERR_ALREADY_EXISTS` for quest duplicate; otherwise `ERR_INVALID_DATA` |
 | Zone references missing enemy | `ERR_INVALID_DATA` |
 | Enemy references missing action DSL record | `ERR_INVALID_DATA` |
+| `SpawnFunnel` runtime has no matching `kind=funnel` definition | `ERR_INVALID_DATA` |
+| Enemy Action DSL uses a delayed supported command before runtime scheduling exists | converter exits non-zero; never flatten the wait silently |
+| Quest references an enemy without an explicit adapter registry entry | converter exits non-zero |
 | Empty/malformed normalized action runtime, projectile distribution, enemy ATK, or schedule | `ERR_INVALID_DATA` |
 | Source file missing during conversion | converter exits non-zero |
 | Emulator projection differs from CN master row | converter exits non-zero |
@@ -63,7 +77,7 @@ Domain transactions mutate a staged `ProfileData`, save that staged value, and t
 
 - Good: deterministic conversion produces byte-identical fixture; all graph references validate; clear result matches active run and persists once; the live profile equals the saved staged profile.
 - Base: terrain is unavailable, so documented fallback geometry is allowed while the canonical multi-zone objective/enemy flow remains authoritative.
-- Bad: a generic enemy ID, guessed HP presented as canonical, unmarked fallback coordinates, raw dictionaries edited by UI, result IDs derived from `Time.get_ticks_msec()`, or a service hand-copying only selected profile fields after save.
+- Bad: using only `zako_emitters[0]`, sharing one HP/condition/action slot across concurrent enemies, letting delayed skills hit later spawns, a generic enemy ID, guessed HP presented as canonical, unmarked fallback coordinates, raw dictionaries edited by UI, result IDs derived from `Time.get_ticks_msec()`, or a service hand-copying only selected profile fields after save.
 
 ## 6. Tests Required
 
@@ -71,7 +85,10 @@ Domain transactions mutate a staged `ProfileData`, save that staged value, and t
 - Canonical ID/hash/HP assertions for the selected quest.
 - Missing enemy, missing action, missing required field, duplicate ID, and malformed type rejection.
 - Fixed-step collision tests must distinguish approaching impact from separating overlap and expose normal impact speed.
-- Simulation regression: 18 zakos with 60-frame respawns transition once to the 13009-HP boss; timeout terminal states produce no result.
+- Simulation regression: quest `1001002` remains 18 single-emitter zakos with 60-frame respawns followed by the 13009-HP boss; timeout terminal states produce no result.
+- Multi-emitter regression: quest `1002001` starts one `slango` and one `spirit`, retains independent 60/120-frame emitter cooldowns, counts exactly 20 objective deaths, then activates the 18295-HP Spirit boss with its 31-state cycle.
+- Ownership regression: serials change on respawn; killing one enemy leaves the other emitter active; owner teardown removes only owned projectiles/funnels; delayed skills cannot hit enemies/funnels created after cast time.
+- Timing regression: poison/delayed-skill deaths start a full emitter cooldown, and a terminal ready event prevents remaining same-frame condition events from mutating cleared/failed state.
 - Action regression: the four checked DSL assets normalize to exact projectile/funnel parameters; N-way and circle patterns are deterministic; canonical enemy ATK (19/30) and attack multipliers damage party HP; zero HP terminates with `party_defeated` and no result.
 - State regression: the 36-state `slango` boss cycle preserves unconditional next-state links and time/loop/move termination metadata, invokes funnel/shot/skill only from their canonical fire states, and uses explicitly marked fallback frames only for movement states whose terrain markers are unavailable.
 - Funnel regression: the level-15 funnel uses canonical 132 HP / 23 ATK evidence, persists while its owner is active, orbits deterministically, fires the canonical zako shot on its configured boundary, and is removed with the owner.
@@ -182,3 +199,19 @@ Equipment contract:
 - Weapon HP/ATK uses original surrounding-key linear interpolation followed by `ceil`.
 - Soul/orb slots contribute ability-soul content but not weapon base stats.
 - Equipment abilities are snapshotted with origin/equipment ID and use the same supported-content gate as character abilities.
+
+Multi-emitter ownership:
+
+```gdscript
+# Wrong: the first emitter and one global HP slot silently discard content.
+var emitter: Dictionary = zone["zako_emitters"][0]
+enemy_hp = int(definition["max_hp"])
+
+# Correct: each emitter and enemy instance owns stable identity and state.
+for emitter_index in range(zone["zako_emitters"].size()):
+    emitter_states.append({"index": emitter_index, "active_serial": 0})
+    _spawn_emitter_enemy(emitter_index)
+
+for enemy_snapshot in battle.get_enemy_snapshots():
+    render_enemy(enemy_snapshot["serial"], enemy_snapshot["position"], enemy_snapshot["hp"])
+```

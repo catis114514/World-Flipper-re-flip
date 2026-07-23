@@ -19,3 +19,16 @@ func run(t) -> void:
     t.assert_equal(battle.status, "cleared", "normal flipper and skill input clears the canonical quest without teleporting the ball")
     t.assert_equal(battle.status_reason, "boss_defeated", "playable replay clears by defeating the boss")
     t.assert_true(battle.outhole_relaunch_count > 0, "fallback outhole relaunch participates in the playable loop")
+
+    t.assert_equal(repository.load_fixture("res://content/fixtures/quest_1002001.json"), OK, "second playable replay fixture loads")
+    var second_quest := repository.get_quest("1002001")
+    var second_snapshot := BattlePartySnapshot.build(ProfileFactory.create_default(), second_quest, "playable-replay-second")
+    var second_battle = BattleSimulation.new(second_quest, "playable-replay-second", second_snapshot)
+    for frame in range(36000):
+        second_battle.set_flippers_pressed((frame % 15) < 8)
+        for skill_index in range(3): second_battle.activate_skill(skill_index)
+        second_battle.step()
+        if second_battle.status != "running": break
+    t.assert_equal(second_battle.status, "cleared", "normal input clears the multi-emitter Spirit quest")
+    t.assert_equal(second_battle.status_reason, "boss_defeated", "second playable replay clears by defeating Spirit")
+    t.assert_true(second_battle.enemy_spawn_serial > 20, "second replay exercises both emitters and respawns")

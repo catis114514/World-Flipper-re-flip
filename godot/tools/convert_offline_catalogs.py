@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 import hashlib
 import json
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 CN = Path("/home/codex/work/wf-assets-cn/orderedmap")
 OUT = ROOT / "godot/content/catalogs/offline_catalogs.json"
+JST = timezone(timedelta(hours=9))
 
 def load(path):
     with path.open("r", encoding="utf-8") as handle:
@@ -14,8 +16,31 @@ def load(path):
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
+def optional_string(value):
+    text = str(value)
+    return "" if text in ("", "0", "(None)") else text
+
+def parse_jst_unix(value):
+    text = optional_string(value)
+    if not text:
+        return 0
+    return int(datetime.strptime(text, "%Y-%m-%d %H:%M:%S").replace(tzinfo=JST).timestamp())
+
+def main_quest_requirement(row, kind_index, multiplied_id_index):
+    kind = str(row[kind_index])
+    if kind == "(None)":
+        return ""
+    if kind != "0":
+        raise RuntimeError(f"main quest has a non-main viewability requirement: {row[0]} kind={kind}")
+    requirement = optional_string(row[multiplied_id_index])
+    if not requirement.isdigit():
+        raise RuntimeError(f"main quest has an invalid viewability requirement: {row[0]} value={requirement}")
+    return requirement
+
 def main():
     quest_path = CN / "quest/main_quest.json"
+    chapter_path = CN / "quest/main_chapter.json"
+    stage_node_path = CN / "quest/main_stage_node.json"
     character_path = CN / "character/character.json"
     text_path = CN / "character/character_text.json"
     equipment_path = CN / "item/equipment.json"
@@ -23,34 +48,81 @@ def main():
     gacha_master_path = CN / "gacha/gacha.json"
 
     raw_quests = load(quest_path)
+    raw_chapters = load(chapter_path)
+    raw_stage_nodes = load(stage_node_path)
     quests = {}
     chapters = []
     stage_nodes = {}
     for chapter_key, chapter_value in sorted(raw_quests.items(), key=lambda pair: int(pair[0])):
-        chapters.append({"id": int(chapter_key), "viewable": True})
+        if chapter_key not in raw_chapters or chapter_key not in raw_stage_nodes:
+            raise RuntimeError(f"missing chapter or stage-node master for main chapter {chapter_key}")
+        chapter_row = raw_chapters[chapter_key][0]
+        source_nodes = raw_stage_nodes[chapter_key]
+        if set(source_nodes) != set(chapter_value):
+            raise RuntimeError(f"stage-node/quest graph mismatch in main chapter {chapter_key}")
         nodes = []
         for stage_key, stage_value in sorted(chapter_value.items(), key=lambda pair: int(pair[0])):
+            stage_row = source_nodes[stage_key][0]
+            stage_node_id = int(stage_row[0])
+            expected_stage_node_id = int(chapter_key) * 1000 + int(stage_key)
+            if stage_node_id != expected_stage_node_id:
+                raise RuntimeError(
+                    f"invalid multiplied stage-node id {stage_node_id}; expected {expected_stage_node_id}"
+                )
+            need_stage_node_id = ""
+            if optional_string(stage_row[2]):
+                need_stage_node_id = str(int(stage_row[2]) * 1000 + int(stage_row[3]))
             quest_ids = []
             for order_key, rows in sorted(stage_value.items(), key=lambda pair: int(pair[0])):
                 for row in rows:
                     quest_id = str(row[0])
-                    prerequisite = str(row[10]) if len(row) > 10 and str(row[10]) not in ("", "0", "(None)") else ""
+                    viewable_prerequisites = []
+                    for requirement in (
+                        main_quest_requirement(row, 6, 10),
+                        main_quest_requirement(row, 11, 15),
+                    ):
+                        if requirement:
+                            viewable_prerequisites.append(requirement)
                     quest_kind = int(row[49]) if len(row) > 49 and str(row[49]) not in ("", "(None)") else 0
                     quests[quest_id] = {
                         "id": quest_id,
                         "name": str(row[1]),
                         "chapter_id": int(chapter_key),
-                        "stage_node_id": int(chapter_key) * 100 + int(stage_key),
+                        "stage_node_id": stage_node_id,
                         "order": int(order_key),
-                        "prerequisite_id": prerequisite,
+                        "prerequisite_id": viewable_prerequisites[0] if viewable_prerequisites else "",
+                        "viewable_prerequisite_ids": viewable_prerequisites,
+                        "viewable_character_ids": [int(value) for value in str(row[18]).split(",") if value],
+                        "start_at": str(row[4]),
+                        "end_at": optional_string(row[5]),
+                        "start_unix": parse_jst_unix(row[4]),
+                        "end_unix": parse_jst_unix(row[5]),
                         "kind": "story" if quest_kind == 0 else ("battle" if quest_kind == 1 else "special_battle"),
                         "viewable": True,
                         "summary": str(row[121]) if len(row) > 121 and quest_kind == 0 else "",
                         "scenario_path": str(row[124]) if len(row) > 124 and quest_kind == 0 else "",
                     }
                     quest_ids.append(quest_id)
-            nodes.append({"id": int(chapter_key) * 100 + int(stage_key), "viewable": True, "quest_ids": quest_ids})
+            nodes.append({
+                "id": stage_node_id,
+                "chapter_id": int(chapter_key),
+                "stage_index": int(stage_key),
+                "name": str(stage_row[1]),
+                "need_stage_node_id": need_stage_node_id,
+                "viewable": True,
+                "quest_ids": quest_ids,
+            })
         stage_nodes[chapter_key] = nodes
+        chapters.append({
+            "id": int(chapter_key),
+            "name": str(chapter_row[0]),
+            "bgm": str(chapter_row[1]),
+            "chapter_icon_image": str(chapter_row[2]),
+            "stage_node_chapter_logo_image": str(chapter_row[5]),
+            "quest_chapter_logo_image": str(chapter_row[6]),
+            "stage_node_background": str(chapter_row[7]),
+            "stage_node_ids": [node["id"] for node in nodes],
+        })
 
     raw_characters = load(character_path)
     raw_text = load(text_path)
@@ -86,20 +158,37 @@ def main():
             "has_projected_pool": str(gacha_id) in gachas,
         }
     result = {
-        "schema_version": 1,
-        "counts": {"quests": len(quests), "characters": len(characters), "equipments": len(equipments), "gacha_banners": len(gacha_banners), "gacha_pools": len(gachas)},
+        "schema_version": 2,
+        "counts": {
+            "chapters": len(chapters),
+            "stage_nodes": sum(len(nodes) for nodes in stage_nodes.values()),
+            "quests": len(quests),
+            "characters": len(characters),
+            "equipments": len(equipments),
+            "gacha_banners": len(gacha_banners),
+            "gacha_pools": len(gachas),
+        },
         "chapters": chapters, "stage_nodes": stage_nodes, "quests": quests,
         "characters": characters, "equipments": equipments, "gacha_banners": gacha_banners, "gachas": gachas,
         "source": {
             "cn_master": str(CN.parent),
             "files": {
-                str(quest_path): digest(quest_path), str(character_path): digest(character_path),
+                str(quest_path): digest(quest_path), str(chapter_path): digest(chapter_path),
+                str(stage_node_path): digest(stage_node_path), str(character_path): digest(character_path),
                 str(text_path): digest(text_path), str(equipment_path): digest(equipment_path),
                 str(gacha_master_path): digest(gacha_master_path), str(gacha_path): digest(gacha_path),
             },
         },
     }
-    expected = {"quests": 419, "characters": 505, "equipments": 436, "gacha_banners": 584, "gacha_pools": 581}
+    expected = {
+        "chapters": 12,
+        "stage_nodes": 139,
+        "quests": 419,
+        "characters": 505,
+        "equipments": 436,
+        "gacha_banners": 584,
+        "gacha_pools": 581,
+    }
     if result["counts"] != expected:
         raise RuntimeError(f"catalog counts do not match CN sources: {result['counts']} != {expected}")
     OUT.parent.mkdir(parents=True, exist_ok=True)

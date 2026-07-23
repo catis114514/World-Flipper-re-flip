@@ -32,6 +32,7 @@ func _initialize() -> void:
         preload("res://tests/test_collision_world.gd").new(),
         preload("res://tests/test_flipper_collision.gd").new(),
         preload("res://tests/test_battle_simulation.gd").new(),
+        preload("res://tests/test_multi_emitter_battle.gd").new(),
         preload("res://tests/test_enemy_action_executor.gd").new(),
         preload("res://tests/test_battle_session_service.gd").new(),
         preload("res://tests/test_main_scene.gd").new(),

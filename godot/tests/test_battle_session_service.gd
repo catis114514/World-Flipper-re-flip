@@ -41,6 +41,7 @@ func run(t) -> void:
     var save_repository = SaveRepository.new(save_path)
     var content_repository = StaticContentRepository.new()
     t.assert_equal(content_repository.load_fixture("res://content/fixtures/quest_1001002.json"), OK, "flow fixture loads")
+    t.assert_equal(content_repository.load_fixture("res://content/fixtures/quest_1002001.json"), OK, "second flow fixture loads")
     var session = BattleSessionService.new(save_repository, LocalProfileService.new(), content_repository)
     var profile = session.load_or_create_profile()
     t.assert_true(profile != null, "missing save creates local profile")
@@ -121,6 +122,21 @@ func run(t) -> void:
     t.assert_equal(after_abort.active_run, {}, "aborted run stays cleared after reload")
     t.assert_equal(after_abort.currencies["free_mana"], 10020, "abort grants no reward")
     t.assert_true(not session.abort_battle(after_abort), "repeated abort is idempotently rejected")
+
+    var second_fixture_battle = session.start_battle(after_abort, "1002001", "run-second-fixture")
+    t.assert_true(second_fixture_battle != null, "second converted quest starts through the generic session boundary")
+    t.assert_equal(after_abort.active_run["quest_id"], "1002001", "second active run persists its own quest id")
+    t.assert_equal(save_repository.load_profile().active_run["quest_id"], "1002001", "second active run survives immediate reload")
+    second_fixture_battle.enemy_actions_enabled = false
+    BattleTestDriver.clear_quest(second_fixture_battle, 20000)
+    t.assert_equal(second_fixture_battle.status, "cleared", "second multi-emitter quest clears through the session flow")
+    t.assert_true(session.finish_battle(after_abort, second_fixture_battle, "result-run-second-fixture"), "second quest result applies transactionally")
+    var second_restored = save_repository.load_profile()
+    t.assert_equal(int(second_restored.quest_progress["1002001"]["clear_count"]), 1, "second quest clear survives save reload")
+    t.assert_equal(second_restored.active_run, {}, "second finished run clears active state after reload")
+    t.assert_equal(second_restored.currencies["free_mana"], 10040, "second quest reward persists exactly once")
+    t.assert_true(not session.finish_battle(second_restored, second_fixture_battle, "result-run-second-fixture"), "second quest result replay is rejected")
+    t.assert_equal(second_restored.currencies["free_mana"], 10040, "replayed second result grants no duplicate reward")
 
     var progression_save_path := "user://tests/progression-result-sync.json"
     for suffix in ["", ".tmp", ".bak"]:

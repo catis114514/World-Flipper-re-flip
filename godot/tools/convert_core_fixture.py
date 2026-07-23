@@ -23,12 +23,18 @@ import zipfile
 from pathlib import Path
 from typing import Any, Callable
 
-QUEST_ID = "1001002"
+DEFAULT_QUEST_ID = "1001002"
 CATEGORY = 1
 ASSET_SALT = "K6R9T9Hz22OpeIGEWB0ui6c6PYFQnJGy"
 ELEMENT_NAMES = ["fire", "water", "thunder", "wind", "light", "dark"]
 DEFAULT_PARTY_IDS = ["141005", "121002", "131004"]
 DEFAULT_EQUIPMENT_IDS = ["1010001", "100001"]
+GENERAL_BOSS_VARIABLE_PATH = Path("orderedmap/battle/boss/general_boss_variable.json")
+
+GENERAL_ENEMY_ADAPTERS = {
+    "slango": {"state_difficulty": "1"},
+    "spirit": {"state_difficulty": "1"},
+}
 
 PARTY_ATK_CURVE_PATH = "master/battle/enemy/party/party_atk_curve_iosbundled.orderedmap"
 HIT_HP_BASIC_CURVE_PATH = "master/battle/enemy/hp/hit_hp_basic_curve_iosbundled.orderedmap"
@@ -419,7 +425,12 @@ def normalize_projectile_pattern(command: list[Any]) -> dict[str, Any]:
 
 def normalize_action_runtime(data: Any) -> list[dict[str, Any]]:
     runtime: list[dict[str, Any]] = []
-    for command in iter_action_commands(data):
+    for delay_frames, command in iter_action_commands_with_delay(data):
+        if command[0] in {"CreateHitArea", "SpawnFunnel"} and delay_frames != 0:
+            raise ValueError(
+                f"delayed enemy action command requires runtime scheduling support: "
+                f"{command[0]} at frame {delay_frames}"
+            )
         if command[0] == "CreateHitArea":
             runtime.append(normalize_projectile_pattern(command))
         elif command[0] == "SpawnFunnel":
@@ -583,24 +594,70 @@ def player_skill_record(wf_assets_root: Path, skill_master: dict[str, Any], asse
         "sha256": sha256(source_path),
     }, (relative.as_posix(), source_path))
 
-def normalize_slango_state_machine(state_master: dict[str, Any]) -> dict[str, Any]:
-    state_rows = state_master["slango"]["1"]
-    action_by_marker = {
-        "funnel1_fire": "battle/action/enemy/action/general_boss/boss_slango$difficulity10_funnel_shot1_single",
-        "shot1_fire": "battle/action/enemy/action/general_boss/boss_slango$difficulity10_shot1",
-        "skill1_fire": "battle/action/enemy/action/general_boss/boss_slango$difficulity10_skill_shot1",
-    }
+def action_paths_from_row(row: list[str]) -> list[str]:
+    return [
+        value
+        for value in row
+        if isinstance(value, str) and value.startswith("battle/action/")
+    ]
+
+
+def boss_action_by_marker(action_paths: list[str]) -> dict[str, str]:
+    marker_actions: dict[str, str] = {}
+    for action_path in action_paths:
+        action_name = action_path.rsplit("/", 1)[-1]
+        if "_funnel_" in action_name:
+            marker_name = "funnel1_fire"
+        elif "_skill_" in action_name:
+            marker_name = "skill1_fire"
+        elif action_name.endswith("_shot1"):
+            marker_name = "shot1_fire"
+        else:
+            continue
+        if marker_name in marker_actions:
+            raise ValueError(f"duplicate boss action marker binding: {marker_name}")
+        marker_actions[marker_name] = action_path
+    return marker_actions
+
+
+def select_general_boss_variables(
+    variable_master: dict[str, Any],
+    routine_id: str,
+    enemy_level: int,
+) -> dict[str, float]:
+    level_groups = variable_master.get(routine_id, {})
+    if not level_groups:
+        return {}
+    selected = threshold_value({int(key): value for key, value in level_groups.items()}, enemy_level)
+    variables: dict[str, float] = {}
+    for variable_name, rows in selected.items():
+        if len(rows) != 1 or len(rows[0]) != 1:
+            raise ValueError(f"general boss variable lookup is ambiguous: {routine_id}.{variable_name}")
+        variables[str(variable_name)] = float(rows[0][0])
+    return variables
+
+
+def normalize_general_boss_state_machine(
+    routine_id: str,
+    initial_state_id: str,
+    state_difficulty: str,
+    state_master: dict[str, Any],
+    action_paths: list[str],
+    variables: dict[str, float],
+) -> dict[str, Any]:
+    state_rows = state_master[routine_id][state_difficulty]
+    action_by_marker = boss_action_by_marker(action_paths)
     states: dict[str, dict[str, Any]] = {}
-    current = "neutral1"
+    current = initial_state_id
     visited: set[str] = set()
     while current not in visited:
         visited.add(current)
         rows = state_rows.get(current, [])
         if len(rows) != 1:
-            raise ValueError(f"slango state lookup is ambiguous: {current}")
+            raise ValueError(f"{routine_id} state lookup is ambiguous: {current}")
         row = rows[0]
         if row[29] != "0" or not row[31]:
-            raise ValueError(f"slango core state is not an unconditional transition: {current}")
+            raise ValueError(f"{routine_id} core state is not an unconditional transition: {current}")
         termination_kind = row[46]
         if termination_kind == "2":
             termination = {"kind": "time", "value": int(row[47])}
@@ -615,8 +672,20 @@ def normalize_slango_state_machine(state_master: dict[str, Any]) -> dict[str, An
                 "fallback_frames": 90,
                 "status": "fallback duration pending terrain marker coordinates and animation speed recovery",
             }
+        elif termination_kind == "6":
+            variable_name = row[47]
+            if variable_name not in variables:
+                raise ValueError(f"missing {routine_id} time variable: {variable_name}")
+            variable_value = variables[variable_name]
+            if not variable_value.is_integer() or variable_value <= 0:
+                raise ValueError(f"invalid {routine_id} time variable: {variable_name}={variable_value}")
+            termination = {
+                "kind": "time",
+                "value": int(variable_value),
+                "source_variable": variable_name,
+            }
         else:
-            raise ValueError(f"unsupported slango termination kind {termination_kind}: {current}")
+            raise ValueError(f"unsupported {routine_id} termination kind {termination_kind}: {current}")
         state = {
             "id": current,
             "animation_sequence_name": option_value(row[2]),
@@ -629,24 +698,31 @@ def normalize_slango_state_machine(state_master: dict[str, Any]) -> dict[str, An
             state["action_id"] = action_by_marker[marker_name]
         states[current] = state
         current = row[31]
-    if current != "neutral1" or len(states) != 36:
-        raise ValueError(f"unexpected slango state cycle: return={current} count={len(states)}")
+    if current != initial_state_id or len(states) != len(state_rows):
+        raise ValueError(
+            f"unexpected {routine_id} state cycle: return={current} "
+            f"visited={len(states)} master={len(state_rows)}"
+        )
     return {
-        "initial_state_id": "neutral1",
+        "initial_state_id": initial_state_id,
         "states": states,
         "status": "canonical unconditional state chain; movement durations use explicit fallback frames",
     }
 
 
-def verify_emulator_projection(repo_root: Path, row: list[str]) -> list[tuple[str, Path]]:
+def verify_emulator_projection(
+    repo_root: Path,
+    quest_id: str,
+    row: list[str],
+) -> list[tuple[str, Path]]:
     paths = [
         ("assets/main_quest.json", repo_root / "assets/main_quest.json"),
         ("assets/quest_lookup.json", repo_root / "assets/quest_lookup.json"),
         ("assets/quest_entry_costs.json", repo_root / "assets/quest_entry_costs.json"),
     ]
-    main_quest = load_json(paths[0][1])[QUEST_ID]
-    quest_name = load_json(paths[1][1])[f"{CATEGORY}_{QUEST_ID}"]
-    entry_cost = load_json(paths[2][1])[f"{CATEGORY}_{QUEST_ID}"]
+    main_quest = load_json(paths[0][1])[quest_id]
+    quest_name = load_json(paths[1][1])[f"{CATEGORY}_{quest_id}"]
+    entry_cost = load_json(paths[2][1])[f"{CATEGORY}_{quest_id}"]
     expected = {
         "name": row[1],
         "stamina": int(row[69]),
@@ -678,7 +754,12 @@ def verify_emulator_projection(repo_root: Path, row: list[str]) -> list[tuple[st
     return paths
 
 
-def build_fixture(repo_root: Path, wf_assets_root: Path, apk_path: Path) -> dict[str, Any]:
+def build_fixture(
+    repo_root: Path,
+    wf_assets_root: Path,
+    apk_path: Path,
+    quest_id: str = DEFAULT_QUEST_ID,
+) -> dict[str, Any]:
     wf_paths = {
         "version": Path("VERSION"),
         "main_quest": Path("orderedmap/quest/main_quest.json"),
@@ -709,16 +790,16 @@ def build_fixture(repo_root: Path, wf_assets_root: Path, apk_path: Path) -> dict
         if not (wf_assets_root / relative).is_file():
             raise FileNotFoundError(f"CN asset source is missing: {wf_assets_root / relative}")
 
-    quest_number = int(QUEST_ID)
+    quest_number = int(quest_id)
     chapter_key = str(quest_number // 1_000_000)
     stage_key = str((quest_number // 1000) % 1000)
     quest_key = str(quest_number % 1000)
     main_master = load_json(wf_assets_root / wf_paths["main_quest"])
     quest_rows = main_master[chapter_key][stage_key][quest_key]
-    if len(quest_rows) != 1 or quest_rows[0][0] != QUEST_ID:
+    if len(quest_rows) != 1 or quest_rows[0][0] != quest_id:
         raise ValueError("CN main quest row lookup is ambiguous")
     row = quest_rows[0]
-    emulator_paths = verify_emulator_projection(repo_root, row)
+    emulator_paths = verify_emulator_projection(repo_root, quest_id, row)
 
     enemy_level = int(row[108])
     field_data_id = row[109]
@@ -743,17 +824,25 @@ def build_fixture(repo_root: Path, wf_assets_root: Path, apk_path: Path) -> dict
             raise ValueError(f"zone {zone_key} lookup is ambiguous")
         zones.append(parse_zone(int(zone_key), zone_rows[0], zone_action_master.get(zone_key, [])))
 
-    required_enemy_ids = {
-        emitter["enemy_id"]
-        for zone in zones
-        for emitter in zone["zako_emitters"]
-    } | {
-        boss["enemy_id"]
-        for zone in zones
-        for boss in zone["bosses"] + zone["multiplayer_bosses"]
-    }
-    if required_enemy_ids != {"slango"}:
-        raise ValueError(f"unexpected enemy graph for {QUEST_ID}: {sorted(required_enemy_ids)}")
+    required_enemy_kinds: dict[str, set[str]] = {}
+    for zone in zones:
+        for emitter in zone["zako_emitters"]:
+            required_enemy_kinds.setdefault(emitter["enemy_id"], set()).add("zako")
+        for boss in zone["bosses"] + zone["multiplayer_bosses"]:
+            required_enemy_kinds.setdefault(boss["enemy_id"], set()).add(boss["kind"])
+    missing_adapters = sorted(set(required_enemy_kinds) - set(GENERAL_ENEMY_ADAPTERS))
+    if missing_adapters:
+        raise ValueError(f"unsupported enemy adapters for {quest_id}: {missing_adapters}")
+    unsupported_kinds = sorted(
+        {
+            kind
+            for kinds in required_enemy_kinds.values()
+            for kind in kinds
+            if kind not in {"zako", "general_boss"}
+        }
+    )
+    if unsupported_kinds:
+        raise ValueError(f"unsupported enemy kinds for {quest_id}: {unsupported_kinds}")
 
     character_master = load_json(wf_assets_root / wf_paths["character"])
     character_status_master = load_json(wf_assets_root / wf_paths["character_status"])
@@ -858,79 +947,227 @@ def build_fixture(repo_root: Path, wf_assets_root: Path, apk_path: Path) -> dict
         atk_correction_curves,
         apk_bundle_names,
     ) = read_apk_curve_tables(apk_path)
-    zako_master = load_json(wf_assets_root / wf_paths["general_zako"])["slango"]
-    boss_master = load_json(wf_assets_root / wf_paths["general_boss"])["slango"]
-    zako_row = threshold_row(zako_master, enemy_level)
-    boss_row = threshold_row(boss_master, enemy_level)
-    zako_level_row = load_json(wf_assets_root / wf_paths["zako_level"])["slango"][0]
-    boss_level_row = load_json(wf_assets_root / wf_paths["boss_level"])["slango"][0]
-    boss_state_machine = normalize_slango_state_machine(load_json(wf_assets_root / wf_paths["general_boss_state"]))
+    general_zako_master = load_json(wf_assets_root / wf_paths["general_zako"])
+    zako_level_master = load_json(wf_assets_root / wf_paths["zako_level"])
+    general_boss_master = load_json(wf_assets_root / wf_paths["general_boss"])
+    boss_level_master = load_json(wf_assets_root / wf_paths["boss_level"])
+    general_boss_state_master = load_json(wf_assets_root / wf_paths["general_boss_state"])
 
-    zako_hp, zako_hp_formula = calculate_hit_hp(
-        enemy_level,
-        zako_level_row,
-        party_atk,
-        basic_curves,
-        correction_curves,
-        float(row[98]),
-    )
-    boss_hp, boss_hp_formula = calculate_hit_hp(
-        enemy_level,
-        boss_level_row,
-        party_atk,
-        basic_curves,
-        correction_curves,
-        float(row[97]),
-    )
+    zako_rows: dict[str, list[str]] = {}
+    boss_rows: dict[str, list[str]] = {}
+    action_path_set: set[str] = set()
+    for enemy_id in sorted(required_enemy_kinds):
+        kinds = required_enemy_kinds[enemy_id]
+        if "zako" in kinds:
+            zako_rows[enemy_id] = threshold_row(general_zako_master[enemy_id], enemy_level)
+            action_path_set.update(action_paths_from_row(zako_rows[enemy_id]))
+        if "general_boss" in kinds:
+            boss_rows[enemy_id] = threshold_row(general_boss_master[enemy_id], enemy_level)
+            action_path_set.update(action_paths_from_row(boss_rows[enemy_id]))
 
-    zako_atk, zako_atk_formula = calculate_enemy_atk(
-        enemy_level,
-        zako_level_row,
-        party_hp,
-        atk_basic_curves,
-        atk_correction_curves,
-        float(row[101]),
-    )
-    boss_atk, boss_atk_formula = calculate_enemy_atk(
-        enemy_level,
-        boss_level_row,
-        party_hp,
-        atk_basic_curves,
-        atk_correction_curves,
-        float(row[100]),
-    )
+    action_records_by_id: dict[str, dict[str, Any]] = {}
+    action_sources_by_id: dict[str, tuple[str, Path]] = {}
 
-    funnel_level = 15
-    funnel_hp, funnel_hp_formula = calculate_hit_hp(
-        funnel_level,
-        zako_level_row,
-        party_atk,
-        basic_curves,
-        correction_curves,
-        float(row[99]),
-    )
-    funnel_atk, funnel_atk_formula = calculate_enemy_atk(
-        funnel_level,
-        zako_level_row,
-        party_hp,
-        atk_basic_curves,
-        atk_correction_curves,
-        float(row[102]),
-    )
-
-    action_paths = sorted(
-        {
-            value
-            for value in zako_row + boss_row
-            if isinstance(value, str) and value.startswith("battle/action/")
-        }
-    )
-    action_assets = []
-    action_source_paths: list[tuple[str, Path]] = []
-    for logical_path in action_paths:
+    def add_action_asset(logical_path: str) -> None:
+        if logical_path in action_records_by_id:
+            return
         record, source = action_asset_record(wf_assets_root, logical_path)
-        action_assets.append(record)
-        action_source_paths.append(source)
+        action_records_by_id[logical_path] = record
+        action_sources_by_id[logical_path] = source
+
+    for logical_path in sorted(action_path_set):
+        add_action_asset(logical_path)
+
+    funnel_specs: dict[str, dict[str, Any]] = {}
+    scanned_action_ids: set[str] = set()
+    while True:
+        pending_action_ids = sorted(set(action_records_by_id) - scanned_action_ids)
+        if not pending_action_ids:
+            break
+        for action_id in pending_action_ids:
+            scanned_action_ids.add(action_id)
+            for runtime in action_records_by_id[action_id]["runtime"]:
+                if runtime["kind"] != "spawn_funnel":
+                    continue
+                if runtime["enemy_kind"] != "zako":
+                    raise ValueError(f"unsupported funnel enemy kind: {runtime}")
+                funnel_enemy_id = runtime["enemy_id"]
+                if funnel_enemy_id not in GENERAL_ENEMY_ADAPTERS:
+                    raise ValueError(f"unsupported funnel enemy adapter: {funnel_enemy_id}")
+                previous = funnel_specs.get(funnel_enemy_id)
+                if previous is not None and int(previous["level"]) != int(runtime["level"]):
+                    raise ValueError(f"multiple funnel levels are unsupported: {funnel_enemy_id}")
+                funnel_specs[funnel_enemy_id] = runtime
+                if funnel_enemy_id not in zako_rows:
+                    zako_rows[funnel_enemy_id] = threshold_row(
+                        general_zako_master[funnel_enemy_id],
+                        enemy_level,
+                    )
+                for logical_path in action_paths_from_row(zako_rows[funnel_enemy_id]):
+                    add_action_asset(logical_path)
+
+    action_assets = [
+        action_records_by_id[logical_path]
+        for logical_path in sorted(action_records_by_id)
+    ]
+    action_source_paths = [
+        action_sources_by_id[logical_path]
+        for logical_path in sorted(action_sources_by_id)
+    ]
+
+    variable_master: dict[str, Any] = {}
+    variable_master_consumed = False
+    enemies: dict[str, dict[str, Any]] = {}
+    all_enemy_ids = sorted(set(required_enemy_kinds) | set(funnel_specs))
+    for enemy_id in all_enemy_ids:
+        kinds = required_enemy_kinds.get(enemy_id, set())
+        needs_zako_data = "zako" in kinds or enemy_id in funnel_specs
+        zako_level_row: list[str] = []
+        zako_actions: list[str] = []
+        if needs_zako_data:
+            zako_level_row = zako_level_master[enemy_id][0]
+            zako_actions = action_paths_from_row(zako_rows[enemy_id])
+            if not zako_actions:
+                raise ValueError(f"general zako has no action asset: {enemy_id}")
+
+        if "zako" in kinds:
+            zako_row = zako_rows[enemy_id]
+            zako_hp, zako_hp_formula = calculate_hit_hp(
+                enemy_level,
+                zako_level_row,
+                party_atk,
+                basic_curves,
+                correction_curves,
+                float(row[98]),
+            )
+            zako_atk, zako_atk_formula = calculate_enemy_atk(
+                enemy_level,
+                zako_level_row,
+                party_hp,
+                atk_basic_curves,
+                atk_correction_curves,
+                float(row[101]),
+            )
+            enemies[f"{enemy_id}_zako"] = {
+                "master_id": enemy_id,
+                "kind": "zako",
+                "level": enemy_level,
+                "max_hp": zako_hp,
+                "hp_formula": zako_hp_formula,
+                "atk": zako_atk,
+                "atk_formula": zako_atk_formula,
+                "pixel_art_by_element": dict(zip(ELEMENT_NAMES, zako_row[2:8], strict=True)),
+                "initial_position_name": zako_row[16],
+                "routine_id": zako_row[17],
+                "initial_state_id": zako_row[18],
+                "action_assets": zako_actions,
+                "action_schedule": {
+                    "status": "minimum deterministic adapter pending the complete general_zako state-machine port",
+                    "initial_delay_frames": 180,
+                    "interval_frames": 300,
+                    "sequence": [zako_actions[0]],
+                },
+            }
+
+        if enemy_id in funnel_specs:
+            funnel_level = int(funnel_specs[enemy_id]["level"])
+            funnel_hp, funnel_hp_formula = calculate_hit_hp(
+                funnel_level,
+                zako_level_row,
+                party_atk,
+                basic_curves,
+                correction_curves,
+                float(row[99]),
+            )
+            funnel_atk, funnel_atk_formula = calculate_enemy_atk(
+                funnel_level,
+                zako_level_row,
+                party_hp,
+                atk_basic_curves,
+                atk_correction_curves,
+                float(row[102]),
+            )
+            enemies[f"{enemy_id}_funnel"] = {
+                "master_id": enemy_id,
+                "kind": "funnel",
+                "level": funnel_level,
+                "max_hp": funnel_hp,
+                "hp_formula": funnel_hp_formula,
+                "atk": funnel_atk,
+                "atk_formula": funnel_atk_formula,
+                "action_assets": zako_actions,
+                "action_schedule": {
+                    "status": "minimum orbiting-funnel adapter pending the complete general_funnel state-machine port",
+                    "initial_delay_frames": 120,
+                    "interval_frames": 180,
+                    "sequence": [zako_actions[0]],
+                },
+            }
+
+        if "general_boss" in kinds:
+            boss_row = boss_rows[enemy_id]
+            boss_level_row = boss_level_master[enemy_id][0]
+            boss_actions = action_paths_from_row(boss_row)
+            boss_hp, boss_hp_formula = calculate_hit_hp(
+                enemy_level,
+                boss_level_row,
+                party_atk,
+                basic_curves,
+                correction_curves,
+                float(row[97]),
+            )
+            boss_atk, boss_atk_formula = calculate_enemy_atk(
+                enemy_level,
+                boss_level_row,
+                party_hp,
+                atk_basic_curves,
+                atk_correction_curves,
+                float(row[100]),
+            )
+            routine_id = boss_row[42]
+            state_difficulty = GENERAL_ENEMY_ADAPTERS[enemy_id]["state_difficulty"]
+            routine_states = general_boss_state_master[routine_id][state_difficulty]
+            uses_variables = any(
+                state_rows[0][46] in {"6", "7", "8"}
+                for state_rows in routine_states.values()
+            )
+            selected_variables: dict[str, float] = {}
+            if uses_variables:
+                if not variable_master:
+                    variable_path = wf_assets_root / GENERAL_BOSS_VARIABLE_PATH
+                    if not variable_path.is_file():
+                        raise FileNotFoundError(f"CN asset source is missing: {variable_path}")
+                    variable_master = load_json(variable_path)
+                    variable_master_consumed = True
+                selected_variables = select_general_boss_variables(
+                    variable_master,
+                    routine_id,
+                    enemy_level,
+                )
+            boss_state_machine = normalize_general_boss_state_machine(
+                routine_id,
+                boss_row[43],
+                state_difficulty,
+                general_boss_state_master,
+                boss_actions,
+                selected_variables,
+            )
+            enemies[f"{enemy_id}_boss"] = {
+                "master_id": enemy_id,
+                "kind": "general_boss",
+                "level": enemy_level,
+                "max_hp": boss_hp,
+                "hp_formula": boss_hp_formula,
+                "atk": boss_atk,
+                "atk_formula": boss_atk_formula,
+                "display_name_by_element": dict(zip(ELEMENT_NAMES, boss_row[3:15:2], strict=True)),
+                "pixel_art_by_element": dict(zip(ELEMENT_NAMES, boss_row[4:15:2], strict=True)),
+                "initial_position_name": boss_row[41],
+                "routine_id": routine_id,
+                "initial_state_id": boss_row[43],
+                "action_assets": boss_actions,
+                "action_state_machine": boss_state_machine,
+            }
 
     terrain_logical_path = f"{terrain_asset}.amf3.deflate"
     terrain_hashed_path = hashed_asset_path(terrain_logical_path)
@@ -942,6 +1179,13 @@ def build_fixture(repo_root: Path, wf_assets_root: Path, apk_path: Path) -> dict
     for role, relative in wf_paths.items():
         source_path = wf_assets_root / relative
         source_files.append({"role": f"cn_master_{role}", "path": relative.as_posix(), "sha256": sha256(source_path)})
+    if variable_master_consumed:
+        variable_path = wf_assets_root / GENERAL_BOSS_VARIABLE_PATH
+        source_files.append({
+            "role": "cn_master_general_boss_variable",
+            "path": GENERAL_BOSS_VARIABLE_PATH.as_posix(),
+            "sha256": sha256(variable_path),
+        })
     for display, source_path in action_source_paths:
         source_files.append({"role": "cn_action_dsl", "path": display, "sha256": sha256(source_path)})
     for display, source_path in player_skill_source_paths:
@@ -950,9 +1194,26 @@ def build_fixture(repo_root: Path, wf_assets_root: Path, apk_path: Path) -> dict
 
     cn_resource_version = (wf_assets_root / wf_paths["version"]).read_text(encoding="utf-8").strip()
 
+    representative_enemy_id = ""
+    representative_enemy_kind = ""
+    for zone in zones:
+        if zone["zako_emitters"]:
+            representative_enemy_id = zone["zako_emitters"][0]["enemy_id"]
+            representative_enemy_kind = "zako"
+            break
+        if zone["bosses"]:
+            representative_enemy_id = zone["bosses"][0]["enemy_id"]
+            representative_enemy_kind = zone["bosses"][0]["kind"]
+            break
+    if not representative_enemy_id:
+        raise ValueError(f"quest has no representative enemy: {quest_id}")
+    representative_suffix = "boss" if representative_enemy_kind == "general_boss" else representative_enemy_kind
+    representative_source_key = f"{representative_enemy_id}_{representative_suffix}"
+    representative_definition = enemies[representative_source_key]
+
     return {
         "schema_version": 2,
-        "id": QUEST_ID,
+        "id": quest_id,
         "category": CATEGORY,
         "name": row[1],
         "entry_stamina": int(row[69]),
@@ -998,60 +1259,7 @@ def build_fixture(repo_root: Path, wf_assets_root: Path, apk_path: Path) -> dict
             "field_assets": field_assets,
         },
         "zones": zones,
-        "enemies": {
-            "slango_zako": {
-                "master_id": "slango",
-                "kind": "zako",
-                "level": enemy_level,
-                "max_hp": zako_hp,
-                "hp_formula": zako_hp_formula,
-                "atk": zako_atk,
-                "atk_formula": zako_atk_formula,
-                "pixel_art_by_element": dict(zip(ELEMENT_NAMES, zako_row[2:8], strict=True)),
-                "initial_position_name": zako_row[16],
-                "routine_id": zako_row[17],
-                "initial_state_id": zako_row[18],
-                "action_assets": [value for value in zako_row if isinstance(value, str) and value.startswith("battle/action/")],
-                "action_schedule": {
-                    "status": "minimum deterministic adapter pending the complete general_zako state-machine port",
-                    "initial_delay_frames": 180,
-                    "interval_frames": 300,
-                    "sequence": ["battle/action/enemy/action/zako/zako_slango$difficulity10_shot1"],
-                },
-            },
-            "slango_funnel": {
-                "master_id": "slango",
-                "kind": "funnel",
-                "level": funnel_level,
-                "max_hp": funnel_hp,
-                "hp_formula": funnel_hp_formula,
-                "atk": funnel_atk,
-                "atk_formula": funnel_atk_formula,
-                "action_assets": ["battle/action/enemy/action/zako/zako_slango$difficulity10_shot1"],
-                "action_schedule": {
-                    "status": "minimum orbiting-funnel adapter pending the complete general_funnel state-machine port",
-                    "initial_delay_frames": 120,
-                    "interval_frames": 180,
-                    "sequence": ["battle/action/enemy/action/zako/zako_slango$difficulity10_shot1"],
-                },
-            },
-            "slango_boss": {
-                "master_id": "slango",
-                "kind": "general_boss",
-                "level": enemy_level,
-                "max_hp": boss_hp,
-                "hp_formula": boss_hp_formula,
-                "atk": boss_atk,
-                "atk_formula": boss_atk_formula,
-                "display_name_by_element": dict(zip(ELEMENT_NAMES, boss_row[3:15:2], strict=True)),
-                "pixel_art_by_element": dict(zip(ELEMENT_NAMES, boss_row[4:15:2], strict=True)),
-                "initial_position_name": boss_row[41],
-                "routine_id": boss_row[42],
-                "initial_state_id": boss_row[43],
-                "action_assets": [value for value in boss_row if isinstance(value, str) and value.startswith("battle/action/")],
-                "action_state_machine": boss_state_machine,
-            },
-        },
+        "enemies": enemies,
         "characters": characters,
         "equipments": equipments,
         "battle_source_defaults": {
@@ -1088,11 +1296,11 @@ def build_fixture(repo_root: Path, wf_assets_root: Path, apk_path: Path) -> dict
             "markers": {"p1": [220.0, 300.0], "p2": [500.0, 300.0], "p3": [360.0, 220.0]},
         },
         "enemy": {
-            "id": "slango",
-            "source_enemy_key": "slango_zako",
-            "kind": "zako",
-            "level": enemy_level,
-            "max_hp": zako_hp,
+            "id": representative_enemy_id,
+            "source_enemy_key": representative_source_key,
+            "kind": representative_enemy_kind,
+            "level": int(representative_definition["level"]),
+            "max_hp": int(representative_definition["max_hp"]),
             "radius": 36.0,
             "position": [360.0, 280.0],
             "placement_status": "representative first-zone spawn pending terrain object coordinates",
@@ -1112,12 +1320,14 @@ def main() -> None:
     parser.add_argument("--repo-root", type=Path, required=True)
     parser.add_argument("--wf-assets-root", type=Path, required=True)
     parser.add_argument("--apk", type=Path, required=True)
+    parser.add_argument("--quest-id", default=DEFAULT_QUEST_ID)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     fixture = build_fixture(
         args.repo_root.resolve(),
         args.wf_assets_root.resolve(),
         args.apk.resolve(),
+        args.quest_id,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(

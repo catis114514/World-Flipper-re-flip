@@ -1,0 +1,4257 @@
+{
+  "schema_version": 2,
+  "id": "1002001",
+  "category": 1,
+  "name": "追蘑菇1",
+  "entry_stamina": 6,
+  "clear_reward_id": 1,
+  "score_reward_group_id": 40001,
+  "rank_times_ms": {
+    "b": 474000,
+    "a": 369000,
+    "s": 264000,
+    "s_plus": 180000
+  },
+  "character_exp": 13,
+  "pool_exp": 13,
+  "rewards": {
+    "free_mana": 20,
+    "free_vmoney": 0
+  },
+  "battle": {
+    "field_data_id": "main_1_2_1",
+    "field_id": "tree_grass01_2_1",
+    "terrain_asset": "battle/terrain/main_quest/chapter_01/main_chapter_01_02_01",
+    "terrain_logical_path": "battle/terrain/main_quest/chapter_01/main_chapter_01_02_01.amf3.deflate",
+    "terrain_hashed_path": "bc/da413a90881a74b430e1a737ede662b0560add",
+    "terrain_present_in_apk_bundle": false,
+    "zone_master_id": "main_1_2_1",
+    "bgm_prefix": "grass_battle_normal",
+    "time_limit_frames": 36000,
+    "enemy_level": 12,
+    "recommended_element": 2,
+    "quest_rank": 1,
+    "hp_corrections": {
+      "boss": 0.75,
+      "zako": 1.0,
+      "funnel": 0.75
+    },
+    "atk_corrections": {
+      "boss": 1.0,
+      "zako": 1.0,
+      "funnel": 1.0
+    },
+    "tp_corrections": {
+      "boss": 1.0,
+      "zako": 1.0,
+      "funnel": 1.0
+    },
+    "field_assets": [
+      "battle/field/world_tree/tree_grass01/background_01_02_01/background_01_02_01",
+      "battle/field/world_tree/tree_grass01/foreground/foreground",
+      "battle/field/world_tree/tree_grass01/added/added",
+      "battle/field_object/world_tree/tree_grass01/gate/tree_grass01_gate",
+      "battle/field_object/world_tree/tree_grass01/transit_pod/tree_grass01_transit_pod",
+      "battle/field_object/world_tree/tree_grass01/fever_gauge/tree_grass01_fever_gauge"
+    ]
+  },
+  "zones": [
+    {
+      "id": 0,
+      "objective": {
+        "kind": "zako_kill",
+        "count": 20
+      },
+      "zako_emitters": [
+        {
+          "enemy_id": "slango",
+          "interval_frames": 60
+        },
+        {
+          "enemy_id": "spirit",
+          "interval_frames": 120
+        }
+      ],
+      "boss_group_kind": 0,
+      "bosses": [],
+      "multiplayer_bosses": [],
+      "actions": [],
+      "field_objects": {
+        "outhole_animation": "battle/field_object/world_tree/tree_grass01/outhole/tree_grass01_outhole_zone1",
+        "dash_panel_directory": "battle/field_object/world_tree/tree_grass01/yakumono/dash_panel",
+        "rotation_panel_animation": "battle/field_object/world_tree/tree_grass01/rotation_panel/tree_grass01_rotation_panel",
+        "instant_item_odds": null,
+        "breakable_block_odds": "chapter1_mana_breakableblock",
+        "breakable_decoration_odds": "chapter1_mana_decoration"
+      }
+    },
+    {
+      "id": 1,
+      "objective": {
+        "kind": "boss_clear"
+      },
+      "zako_emitters": [],
+      "boss_group_kind": 0,
+      "bosses": [
+        {
+          "enemy_id": "spirit",
+          "kind": "general_boss"
+        }
+      ],
+      "multiplayer_bosses": [
+        {
+          "enemy_id": "spirit",
+          "kind": "general_boss"
+        }
+      ],
+      "actions": [],
+      "field_objects": {
+        "outhole_animation": "battle/field_object/world_tree/tree_grass01/outhole/tree_grass01_outhole_zone2",
+        "dash_panel_directory": "battle/field_object/world_tree/tree_grass01/yakumono/dash_panel",
+        "rotation_panel_animation": "battle/field_object/world_tree/tree_grass01/rotation_panel/tree_grass01_rotation_panel",
+        "instant_item_odds": null,
+        "breakable_block_odds": "chapter1_mana_breakableblock",
+        "breakable_decoration_odds": "chapter1_mana_decoration"
+      }
+    }
+  ],
+  "enemies": {
+    "slango_zako": {
+      "master_id": "slango",
+      "kind": "zako",
+      "level": 12,
+      "max_hp": 148,
+      "hp_formula": {
+        "party_atk_level_1": 375.0,
+        "party_atk_multiplier": 1.14285714285714,
+        "basic_curve_id": "hit_hp_basic_normal",
+        "basic_multiplier": 1.0,
+        "hit_count": 0.3,
+        "row_correction": 1.0,
+        "correction_curve_id": "hit_hp_correction_funnel",
+        "curve_correction": 1.155,
+        "quest_correction": 1.0
+      },
+      "atk": 19,
+      "atk_formula": {
+        "party_hp_level_1": 645.0,
+        "party_hp_multiplier": 1.14285714285714,
+        "basic_curve_id": "atk_basic_normal",
+        "basic_multiplier": 1.0,
+        "hit_count": 38.0,
+        "row_correction": 1.0,
+        "correction_curve_id": "atk_correction_normal",
+        "curve_correction": 1.0,
+        "quest_correction": 1.0
+      },
+      "pixel_art_by_element": {
+        "fire": "character/slango_red/pixelart/pixelart",
+        "water": "character/slango_blue/pixelart/pixelart",
+        "thunder": "character/slango_yellow/pixelart/pixelart",
+        "wind": "character/slango_green/pixelart/pixelart",
+        "light": "character/slango_light/pixelart/pixelart",
+        "dark": "character/slango_dark/pixelart/pixelart"
+      },
+      "initial_position_name": "*spawn-point*",
+      "routine_id": "general_zako",
+      "initial_state_id": "start",
+      "action_assets": [
+        "battle/action/enemy/action/zako/zako_slango$difficulity10_shot1"
+      ],
+      "action_schedule": {
+        "status": "minimum deterministic adapter pending the complete general_zako state-machine port",
+        "initial_delay_frames": 180,
+        "interval_frames": 300,
+        "sequence": [
+          "battle/action/enemy/action/zako/zako_slango$difficulity10_shot1"
+        ]
+      }
+    },
+    "spirit_zako": {
+      "master_id": "spirit",
+      "kind": "zako",
+      "level": 12,
+      "max_hp": 742,
+      "hp_formula": {
+        "party_atk_level_1": 375.0,
+        "party_atk_multiplier": 1.14285714285714,
+        "basic_curve_id": "hit_hp_basic_normal",
+        "basic_multiplier": 1.0,
+        "hit_count": 1.5,
+        "row_correction": 1.0,
+        "correction_curve_id": "hit_hp_correction_funnel",
+        "curve_correction": 1.155,
+        "quest_correction": 1.0
+      },
+      "atk": 26,
+      "atk_formula": {
+        "party_hp_level_1": 645.0,
+        "party_hp_multiplier": 1.14285714285714,
+        "basic_curve_id": "atk_basic_normal",
+        "basic_multiplier": 1.0,
+        "hit_count": 28.0,
+        "row_correction": 1.0,
+        "correction_curve_id": "atk_correction_normal",
+        "curve_correction": 1.0,
+        "quest_correction": 1.0
+      },
+      "pixel_art_by_element": {
+        "fire": "character/spirit_fire/pixelart/pixelart",
+        "water": "character/spirit_water/pixelart/pixelart",
+        "thunder": "character/spirit_thunder/pixelart/pixelart",
+        "wind": "character/spirit_green/pixelart/pixelart",
+        "light": "character/spirit_light/pixelart/pixelart",
+        "dark": "character/spirit_dark/pixelart/pixelart"
+      },
+      "initial_position_name": "*spawn-point*",
+      "routine_id": "general_zako",
+      "initial_state_id": "start",
+      "action_assets": [
+        "battle/action/enemy/action/zako/zako_spirit$difficulity10_shot1_dark"
+      ],
+      "action_schedule": {
+        "status": "minimum deterministic adapter pending the complete general_zako state-machine port",
+        "initial_delay_frames": 180,
+        "interval_frames": 300,
+        "sequence": [
+          "battle/action/enemy/action/zako/zako_spirit$difficulity10_shot1_dark"
+        ]
+      }
+    },
+    "spirit_funnel": {
+      "master_id": "spirit",
+      "kind": "funnel",
+      "level": 3,
+      "max_hp": 101,
+      "hp_formula": {
+        "party_atk_level_1": 375.0,
+        "party_atk_multiplier": 0.3,
+        "basic_curve_id": "hit_hp_basic_normal",
+        "basic_multiplier": 0.8,
+        "hit_count": 1.5,
+        "row_correction": 1.0,
+        "correction_curve_id": "hit_hp_correction_funnel",
+        "curve_correction": 1.0,
+        "quest_correction": 0.75
+      },
+      "atk": 5,
+      "atk_formula": {
+        "party_hp_level_1": 645.0,
+        "party_hp_multiplier": 0.3,
+        "basic_curve_id": "atk_basic_normal",
+        "basic_multiplier": 0.8,
+        "hit_count": 28.0,
+        "row_correction": 1.0,
+        "correction_curve_id": "atk_correction_normal",
+        "curve_correction": 1.0,
+        "quest_correction": 1.0
+      },
+      "action_assets": [
+        "battle/action/enemy/action/zako/zako_spirit$difficulity10_shot1_dark"
+      ],
+      "action_schedule": {
+        "status": "minimum orbiting-funnel adapter pending the complete general_funnel state-machine port",
+        "initial_delay_frames": 120,
+        "interval_frames": 180,
+        "sequence": [
+          "battle/action/enemy/action/zako/zako_spirit$difficulity10_shot1_dark"
+        ]
+      }
+    },
+    "spirit_boss": {
+      "master_id": "spirit",
+      "kind": "general_boss",
+      "level": 12,
+      "max_hp": 18295,
+      "hp_formula": {
+        "party_atk_level_1": 375.0,
+        "party_atk_multiplier": 1.14285714285714,
+        "basic_curve_id": "hit_hp_basic_normal",
+        "basic_multiplier": 1.0,
+        "hit_count": 42.0,
+        "row_correction": 1.0,
+        "correction_curve_id": "hit_hp_correction_normal",
+        "curve_correction": 1.3552,
+        "quest_correction": 0.75
+      },
+      "atk": 36,
+      "atk_formula": {
+        "party_hp_level_1": 645.0,
+        "party_hp_multiplier": 1.14285714285714,
+        "basic_curve_id": "atk_basic_normal",
+        "basic_multiplier": 1.0,
+        "hit_count": 20.0,
+        "row_correction": 1.0,
+        "correction_curve_id": "atk_correction_normal",
+        "curve_correction": 1.0,
+        "quest_correction": 1.0
+      },
+      "display_name_by_element": {
+        "fire": "火灵",
+        "water": "水灵",
+        "thunder": "雷灵",
+        "wind": "风灵",
+        "light": "光灵",
+        "dark": "暗灵"
+      },
+      "pixel_art_by_element": {
+        "fire": "character/boss_spirit_fire/pixelart/pixelart",
+        "water": "character/boss_spirit_water/pixelart/pixelart",
+        "thunder": "character/boss_spirit_thunder/pixelart/pixelart",
+        "wind": "character/boss_spirit_green/pixelart/pixelart",
+        "light": "character/boss_spirit_light/pixelart/pixelart",
+        "dark": "character/boss_spirit_dark/pixelart/pixelart"
+      },
+      "initial_position_name": "p0",
+      "routine_id": "spirit",
+      "initial_state_id": "neutral1",
+      "action_assets": [
+        "battle/action/enemy/action/general_boss/boss_spirit$difficulity10_shot1",
+        "battle/action/enemy/action/general_boss/boss_spirit$difficulity10_skill_shot1",
+        "battle/action/enemy/action/general_boss/boss_spirit$difficulity10_funnel_shot1_single"
+      ],
+      "action_state_machine": {
+        "initial_state_id": "neutral1",
+        "states": {
+          "neutral1": {
+            "id": "neutral1",
+            "animation_sequence_name": "walk_front",
+            "marker_sequence_name": "walk_front",
+            "next_state": "shot1_start1",
+            "termination": {
+              "kind": "time",
+              "value": 60
+            }
+          },
+          "shot1_start1": {
+            "id": "shot1_start1",
+            "animation_sequence_name": "attack_initial",
+            "marker_sequence_name": "shot1_start",
+            "next_state": "shot1_charge1",
+            "termination": {
+              "kind": "animation_loop",
+              "value": 1
+            }
+          },
+          "shot1_charge1": {
+            "id": "shot1_charge1",
+            "animation_sequence_name": "attack_charge",
+            "marker_sequence_name": "shot1_charge",
+            "next_state": "shot1_action1",
+            "termination": {
+              "kind": "time",
+              "value": 20
+            }
+          },
+          "shot1_action1": {
+            "id": "shot1_action1",
+            "animation_sequence_name": "attack_action",
+            "marker_sequence_name": "shot1_action",
+            "next_state": "shot1_fire1",
+            "termination": {
+              "kind": "animation_loop",
+              "value": 1
+            }
+          },
+          "shot1_fire1": {
+            "id": "shot1_fire1",
+            "animation_sequence_name": "attack_fire",
+            "marker_sequence_name": "shot1_fire",
+            "next_state": "neutral2",
+            "termination": {
+              "kind": "animation_loop",
+              "value": 1
+            },
+            "action_id": "battle/action/enemy/action/general_boss/boss_spirit$difficulity10_shot1"
+          },
+          "neutral2": {
+            "id": "neutral2",
+            "animation_sequence_name": "walk_front",
+            "marker_sequence_name": "walk_front",
+            "next_state": "shot1_start2",
+            "termination": {
+              "kind": "time",
+              "value": 50
+            }
+          },
+          "shot1_start2": {
+            "id": "shot1_start2",
+            "animation_sequence_name": "attack_initial",
+            "marker_sequence_name": "shot1_start",
+            "next_state": "shot1_charge2",
+            "termination": {
+              "kind": "animation_loop",
+              "value": 1
+            }
+          },
+          "shot1_charge2": {
+            "id": "shot1_charge2",
+            "animation_sequence_name": "attack_charge",
+            "marker_sequence_name": "shot1_charge",
+            "next_state": "shot1_action2",
+            "termination": {
+              "kind": "time",
+              "value": 20
+            }
+          },
+          "shot1_action2": {
+            "id": "shot1_action2",
+            "animation_sequence_name": "attack_action",
+            "marker_sequence_name": "shot1_action",
+            "next_state": "shot1_fire2",
+            "termination": {
+              "kind": "animation_loop",
+              "value": 1
+            }
+          },
+          "shot1_fire2": {
+            "id": "shot1_fire2",
+            "animation_sequence_name": "attack_fire",
+            "marker_sequence_name": "shot1_fire",
+            "next_state": "move1",
+            "termination": {
+              "kind": "animation_loop",
+              "value": 1
+            },
+            "action_id": "battle/action/enemy/action/general_boss/boss_spirit$difficulity10_shot1"
+          },
+          "move1": {
+            "id": "move1",
+            "animation_sequence_name": "walk_front",
+            "marker_sequence_name": "walk_front",
+            "next_state": "funnel1_start1",
+            "termination": {
+              "kind": "move",
+              "distance": 4.0,
+              "target": "p1",
+              "easing": 0,
+              "fallback_frames": 90,
+              "status": "fallback duration pending terrain marker coordinates and animation speed recovery"
+            }
+          },
+          "funnel1_start1": {
+            "id": "funnel1_start1",
+            "animation_sequence_name": "attack_initial",
+            "marker_sequence_name": "funnel1_start",
+            "next_state": "funnel1_charge1",
+            "termination": {
+              "kind": "animation_loop",
+              "value": 1
+            }
+          },
+          "funnel1_charge1": {
+            "id": "funnel1_charge1",
+            "animation_sequence_name": "attack_charge",
+            "marker_sequence_name": "funnel1_charge",
+            "next_state": "funnel1_action1",
+            "termination": {
+              "kind": "time",
+              "value": 60
+            }
+          },
+          "funnel1_action1": {
+            "id": "funnel1_action1",
+            "animation_sequence_name": "attack_action",
+            "marker_sequence_name": "funnel1_action",
+            "next_state": "funnel_fire1",
+            "termination": {
+              "kind": "animation_loop",
+              "value": 1
+            }
+          },
+          "funnel_fire1": {
+            "id": "funnel_fire1",
+            "animation_sequence_name": "attack_fire",
+            "marker_sequence_name": "funnel1_fire",
+            "next_state": "neutral3",
+            "termination": {
+              "kind": "animation_loop",
+              "value": 1
+            },
+            "action_id": "battle/action/enemy/action/general_boss/boss_spirit$difficulity10_funnel_shot1_single"
+          },
+          "neutral3": {
+            "id": "neutral3",
+            "animation_sequence_name": "walk_front",
+            "marker_sequence_name": "walk_front",
+            "next_state": "shot1_start3",
+            "termination": {
+              "kind": "time",
+              "value": 15
+            }
+          },
+          "shot1_start3": {
+            "id": "shot1_start3",
+            "animation_sequence_name": "attack_initial",
+            "marker_sequence_name": "shot1_start",
+            "next_state": "shot1_charge3",
+            "termination": {
+              "kind": "animation_loop",
+              "value": 1
+            }
+          },
+          "shot1_charge3": {
+            "id": "shot1_charge3",
+            "animation_sequence_name": "attack_charge",
+            "marker_sequence_name": "shot1_charge",
+            "next_state": "shot1_action3",
+            "termination": {
+              "kind": "time",
+              "value": 20
+            }
+          },
+          "shot1_action3": {
+            "id": "shot1_action3",
+            "animation_sequence_name": "attack_action",
+            "marker_sequence_name": "shot1_action",
+            "next_state": "shot1_fire3",
+            "termination": {
+              "kind": "animation_loop",
+              "value": 1
+            }
+          },
+          "shot1_fire3": {
+            "id": "shot1_fire3",
+            "animation_sequence_name": "attack_fire",
+            "marker_sequence_name": "shot1_fire",
+            "next_state": "move2",
+            "termination": {
+              "kind": "animation_loop",
+              "value": 1
+            },
+            "action_id": "battle/action/enemy/action/general_boss/boss_spirit$difficulity10_shot1"
+          },
+          "move2": {
+            "id": "move2",
+            "animation_sequence_name": "walk_front",
+            "marker_sequence_name": "walk_front",
+            "next_state": "skill1_shot1",
+            "termination": {
+              "kind": "move",
+              "distance": 4.0,
+              "target": "p2",
+              "easing": 0,
+              "fallback_frames": 90,
+              "status": "fallback duration pending terrain marker coordinates and animation speed recovery"
+            }
+          },
+          "skill1_shot1": {
+            "id": "skill1_shot1",
+            "animation_sequence_name": "attack_initial",
+            "marker_sequence_name": "skill1_start",
+            "next_state": "skill1_charge1",
+            "termination": {
+              "kind": "animation_loop",
+              "value": 1
+            }
+          },
+          "skill1_charge1": {
+            "id": "skill1_charge1",
+            "animation_sequence_name": "attack_charge",
+            "marker_sequence_name": "skill1_charge",
+            "next_state": "skill1_action1",
+            "termination": {
+              "kind": "time",
+              "value": 240,
+              "source_variable": "charge1"
+            }
+          },
+          "skill1_action1": {
+            "id": "skill1_action1",
+            "animation_sequence_name": "attack_action",
+            "marker_sequence_name": "skill1_action",
+            "next_state": "skill1_fire1",
+            "termination": {
+              "kind": "animation_loop",
+              "value": 1
+            }
+          },
+          "skill1_fire1": {
+            "id": "skill1_fire1",
+            "animation_sequence_name": "attack_fire",
+            "marker_sequence_name": "skill1_fire",
+            "next_state": "neutral4",
+            "termination": {
+              "kind": "animation_loop",
+              "value": 1
+            },
+            "action_id": "battle/action/enemy/action/general_boss/boss_spirit$difficulity10_skill_shot1"
+          },
+          "neutral4": {
+            "id": "neutral4",
+            "animation_sequence_name": "walk_front",
+            "marker_sequence_name": "walk_front",
+            "next_state": "shot1_start4",
+            "termination": {
+              "kind": "time",
+              "value": 80
+            }
+          },
+          "shot1_start4": {
+            "id": "shot1_start4",
+            "animation_sequence_name": "attack_initial",
+            "marker_sequence_name": "shot1_start",
+            "next_state": "shot1_charge4",
+            "termination": {
+              "kind": "animation_loop",
+              "value": 1
+            }
+          },
+          "shot1_charge4": {
+            "id": "shot1_charge4",
+            "animation_sequence_name": "attack_charge",
+            "marker_sequence_name": "shot1_charge",
+            "next_state": "shot1_action4",
+            "termination": {
+              "kind": "time",
+              "value": 20
+            }
+          },
+          "shot1_action4": {
+            "id": "shot1_action4",
+            "animation_sequence_name": "attack_action",
+            "marker_sequence_name": "shot1_action",
+            "next_state": "shot1_fire4",
+            "termination": {
+              "kind": "animation_loop",
+              "value": 1
+            }
+          },
+          "shot1_fire4": {
+            "id": "shot1_fire4",
+            "animation_sequence_name": "attack_fire",
+            "marker_sequence_name": "shot1_fire",
+            "next_state": "move3",
+            "termination": {
+              "kind": "animation_loop",
+              "value": 1
+            },
+            "action_id": "battle/action/enemy/action/general_boss/boss_spirit$difficulity10_shot1"
+          },
+          "move3": {
+            "id": "move3",
+            "animation_sequence_name": "walk_front",
+            "marker_sequence_name": "walk_front",
+            "next_state": "neutral1",
+            "termination": {
+              "kind": "move",
+              "distance": 4.0,
+              "target": "p3",
+              "easing": 0,
+              "fallback_frames": 90,
+              "status": "fallback duration pending terrain marker coordinates and animation speed recovery"
+            }
+          }
+        },
+        "status": "canonical unconditional state chain; movement durations use explicit fallback frames"
+      }
+    }
+  },
+  "characters": {
+    "141005": {
+      "id": "141005",
+      "asset_id": "bigwing_shaman",
+      "name": "西微",
+      "level": 1,
+      "rarity": 5,
+      "element": 3,
+      "gender": "Female",
+      "races": [
+        "Human",
+        "Element"
+      ],
+      "speciality": "Supporter",
+      "hp": 52,
+      "atk": 11,
+      "main_hp": 52,
+      "unison_hp": 0,
+      "main_atk": 11,
+      "unison_atk": 0,
+      "max_level": 100,
+      "status_curve": {
+        "1": {
+          "hp": 52,
+          "atk": 11
+        },
+        "10": {
+          "hp": 518,
+          "atk": 107
+        },
+        "80": {
+          "hp": 3108,
+          "atk": 642
+        },
+        "100": {
+          "hp": 3419,
+          "atk": 706
+        }
+      },
+      "exp_curve_id": "1",
+      "exp_curve": {
+        "1": 0,
+        "2": 10,
+        "3": 20,
+        "4": 38,
+        "5": 64,
+        "6": 100,
+        "7": 146,
+        "8": 202,
+        "9": 269,
+        "10": 348,
+        "11": 440,
+        "12": 545,
+        "13": 663,
+        "14": 796,
+        "15": 944,
+        "16": 1108,
+        "17": 1288,
+        "18": 1485,
+        "19": 1699,
+        "20": 1932,
+        "21": 2184,
+        "22": 2455,
+        "23": 2746,
+        "24": 3058,
+        "25": 3392,
+        "26": 3748,
+        "27": 4126,
+        "28": 4528,
+        "29": 4954,
+        "30": 5404,
+        "31": 5880,
+        "32": 6382,
+        "33": 6910,
+        "34": 7465,
+        "35": 8048,
+        "36": 8660,
+        "37": 9301,
+        "38": 9971,
+        "39": 10672,
+        "40": 11416,
+        "41": 12204,
+        "42": 13037,
+        "43": 13917,
+        "44": 14844,
+        "45": 15820,
+        "46": 16846,
+        "47": 17924,
+        "48": 19054,
+        "49": 20238,
+        "50": 21477,
+        "51": 22772,
+        "52": 24124,
+        "53": 25535,
+        "54": 27006,
+        "55": 28538,
+        "56": 30132,
+        "57": 31789,
+        "58": 33511,
+        "59": 35299,
+        "60": 37241,
+        "61": 39343,
+        "62": 41612,
+        "63": 44054,
+        "64": 46675,
+        "65": 49481,
+        "66": 52479,
+        "67": 55675,
+        "68": 59075,
+        "69": 62685,
+        "70": 66600,
+        "71": 70832,
+        "72": 75394,
+        "73": 80298,
+        "74": 85556,
+        "75": 91180,
+        "76": 97183,
+        "77": 103576,
+        "78": 110372,
+        "79": 117584,
+        "80": 125223,
+        "81": 134364,
+        "82": 143505,
+        "83": 152646,
+        "84": 161787,
+        "85": 170928,
+        "86": 180069,
+        "87": 189210,
+        "88": 198351,
+        "89": 207492,
+        "90": 216633,
+        "91": 225774,
+        "92": 234915,
+        "93": 244056,
+        "94": 253197,
+        "95": 262338,
+        "96": 271479,
+        "97": 280620,
+        "98": 289761,
+        "99": 298902,
+        "100": 308043
+      },
+      "evolution_bonus": {
+        "atk_1": 60,
+        "hp_1": 300,
+        "atk_2": 0,
+        "hp_2": 0
+      },
+      "skill": {
+        "name": "精灵风暴",
+        "description": "在前方召唤精灵，精灵周围产生风暴，对周围的敌方造成风属性伤害【根据连击数伤害提升】 ／赋予己方浮游效果。",
+        "max_skill_point": 530,
+        "action_id": "battle/action/skill/action/rare5/bigwing_shaman$bigwing_shaman_1",
+        "runtime": {
+          "kind": "area_attack",
+          "delay_frames": 0,
+          "radius": 175.0,
+          "max_hits": 24,
+          "attack_multiplier": 0.5,
+          "conditions": [
+            {
+              "delay_frames": 0,
+              "source_kind": "ACFlying",
+              "kind": "flying",
+              "target": "party",
+              "duration_frames": 480
+            }
+          ],
+          "status": "canonical hit delay/core parameters/condition payloads; visual effects and full target semantics pending"
+        },
+        "sha256": "4e3d109bf04af056542ccc51552fbcd9728a6ed6d37d5b323186e3fb854ddb41"
+      },
+      "ability_ids": [
+        "1410051",
+        "1410052",
+        "1410053",
+        "1410054",
+        "1410055",
+        "1410056"
+      ],
+      "abilities": [
+        {
+          "ability_id": "1410051",
+          "row_index": 0,
+          "unisonable": true,
+          "statue_group_id": "attack_common",
+          "trigger_code": 0,
+          "trigger_kind": "None",
+          "trigger_threshold_raw": 0.0,
+          "trigger_threshold": 0.0,
+          "content_code": 31,
+          "content_kind": "ResistanceYellowDownPrevent",
+          "target_code": 0,
+          "power1_raw": 0.0,
+          "first_max_raw": 0.0,
+          "power1": 0.0,
+          "first_max": 0.0
+        },
+        {
+          "ability_id": "1410051",
+          "row_index": 1,
+          "unisonable": true,
+          "statue_group_id": "attack_common",
+          "trigger_code": 0,
+          "trigger_kind": "None",
+          "trigger_threshold_raw": 0.0,
+          "trigger_threshold": 0.0,
+          "content_code": 191,
+          "content_kind": "PowerFlipDamageUpExtend",
+          "target_code": 0,
+          "power1_raw": 5000.0,
+          "first_max_raw": 10000.0,
+          "power1": 0.05,
+          "first_max": 0.1
+        },
+        {
+          "ability_id": "1410052",
+          "row_index": 0,
+          "unisonable": true,
+          "statue_group_id": "attack_common",
+          "trigger_code": 20,
+          "trigger_kind": "DamageCount",
+          "trigger_threshold_raw": 1000000.0,
+          "trigger_threshold": 10.0,
+          "content_code": 33,
+          "content_kind": "SkillDamage",
+          "target_code": 0,
+          "power1_raw": 5000.0,
+          "first_max_raw": 10000.0,
+          "power1": 0.05,
+          "first_max": 0.1
+        },
+        {
+          "ability_id": "1410053",
+          "row_index": 0,
+          "unisonable": false,
+          "statue_group_id": "attack_green",
+          "trigger_code": 23,
+          "trigger_kind": "SkillMax",
+          "trigger_threshold_raw": 100000.0,
+          "trigger_threshold": 1.0,
+          "content_code": 32,
+          "content_kind": "DirectDamage",
+          "target_code": 7,
+          "power1_raw": 12500.0,
+          "first_max_raw": 25000.0,
+          "power1": 0.125,
+          "first_max": 0.25
+        },
+        {
+          "ability_id": "1410054",
+          "row_index": 0,
+          "unisonable": true,
+          "statue_group_id": "action_skill",
+          "trigger_code": 0,
+          "trigger_kind": "None",
+          "trigger_threshold_raw": 0.0,
+          "trigger_threshold": 0.0,
+          "content_code": 211,
+          "content_kind": "AddFeverPoint",
+          "target_code": 0,
+          "power1_raw": 25000.0,
+          "first_max_raw": 50000.0,
+          "power1": 0.25,
+          "first_max": 0.5
+        },
+        {
+          "ability_id": "1410055",
+          "row_index": 0,
+          "unisonable": true,
+          "statue_group_id": "attack_common",
+          "trigger_code": 0,
+          "trigger_kind": "None",
+          "trigger_threshold_raw": 0.0,
+          "trigger_threshold": 0.0,
+          "content_code": 31,
+          "content_kind": "ResistanceYellowDownPrevent",
+          "target_code": 0,
+          "power1_raw": 0.0,
+          "first_max_raw": 0.0,
+          "power1": 0.0,
+          "first_max": 0.0
+        },
+        {
+          "ability_id": "1410056",
+          "row_index": 0,
+          "unisonable": true,
+          "statue_group_id": "condition",
+          "trigger_code": 23,
+          "trigger_kind": "SkillMax",
+          "trigger_threshold_raw": 100000.0,
+          "trigger_threshold": 1.0,
+          "content_code": 223,
+          "content_kind": "AdditionalDirectAtttackExtend",
+          "target_code": 0,
+          "power1_raw": 12500.0,
+          "first_max_raw": 25000.0,
+          "power1": 0.125,
+          "first_max": 0.25
+        }
+      ],
+      "mana_boards": {
+        "1": [
+          {
+            "id": "282010201",
+            "board_id": 1,
+            "index": 1,
+            "parent_id": null,
+            "kind": "ability",
+            "required_items": {
+              "13": 3
+            },
+            "required_mana": 60,
+            "effect_kind": "ability",
+            "ability_slot": 1,
+            "required_level": null
+          },
+          {
+            "id": "282010202",
+            "board_id": 1,
+            "index": 2,
+            "parent_id": "282010201",
+            "kind": "ability",
+            "required_items": {
+              "13": 5
+            },
+            "required_mana": 100,
+            "effect_kind": "ability",
+            "ability_slot": 1,
+            "required_level": null
+          },
+          {
+            "id": "282010206",
+            "board_id": 1,
+            "index": 6,
+            "parent_id": "282010202",
+            "kind": "ability",
+            "required_items": {
+              "13": 5,
+              "14": 3
+            },
+            "required_mana": 340,
+            "effect_kind": "ability",
+            "ability_slot": 1,
+            "required_level": null
+          },
+          {
+            "id": "282010203",
+            "board_id": 1,
+            "index": 3,
+            "parent_id": "282010202",
+            "kind": "ability",
+            "required_items": {
+              "13": 5
+            },
+            "required_mana": 100,
+            "effect_kind": "ability",
+            "ability_slot": 1,
+            "required_level": null
+          },
+          {
+            "id": "282010204",
+            "board_id": 1,
+            "index": 4,
+            "parent_id": "282010201",
+            "kind": "ability",
+            "required_items": {
+              "13": 6
+            },
+            "required_mana": 160,
+            "effect_kind": "ability",
+            "ability_slot": 1,
+            "required_level": null
+          },
+          {
+            "id": "282010205",
+            "board_id": 1,
+            "index": 5,
+            "parent_id": "282010204",
+            "kind": "ability",
+            "required_items": {
+              "13": 12
+            },
+            "required_mana": 240,
+            "effect_kind": "ability",
+            "ability_slot": 1,
+            "required_level": null
+          },
+          {
+            "id": "282010219",
+            "board_id": 1,
+            "index": 19,
+            "parent_id": "282010205",
+            "kind": "ability",
+            "required_items": {
+              "13": 8,
+              "14": 6,
+              "15": 3
+            },
+            "required_mana": 1280,
+            "effect_kind": "action_skill_evolution",
+            "ability_slot": 0,
+            "required_level": 25
+          },
+          {
+            "id": "282010220",
+            "board_id": 1,
+            "index": 20,
+            "parent_id": "282010219",
+            "kind": "ability",
+            "required_items": {
+              "13": 35,
+              "14": 10,
+              "15": 5
+            },
+            "required_mana": 2120,
+            "effect_kind": "action_skill_level",
+            "ability_slot": 0,
+            "required_level": 25
+          },
+          {
+            "id": "282010213",
+            "board_id": 1,
+            "index": 13,
+            "parent_id": "282010220",
+            "kind": "ability",
+            "required_items": {
+              "13": 18,
+              "14": 10,
+              "15": 6,
+              "16": 1
+            },
+            "required_mana": 3160,
+            "effect_kind": "ability",
+            "ability_slot": 3,
+            "required_level": 40
+          },
+          {
+            "id": "282010214",
+            "board_id": 1,
+            "index": 14,
+            "parent_id": "282010213",
+            "kind": "ability",
+            "required_items": {
+              "14": 12,
+              "15": 8,
+              "16": 3,
+              "99": 1
+            },
+            "required_mana": 7120,
+            "effect_kind": "ability",
+            "ability_slot": 3,
+            "required_level": 40
+          },
+          {
+            "id": "282010215",
+            "board_id": 1,
+            "index": 15,
+            "parent_id": "282010214",
+            "kind": "ability",
+            "required_items": {
+              "14": 12,
+              "15": 8,
+              "16": 3,
+              "99": 1
+            },
+            "required_mana": 7120,
+            "effect_kind": "ability",
+            "ability_slot": 3,
+            "required_level": 40
+          },
+          {
+            "id": "282010216",
+            "board_id": 1,
+            "index": 16,
+            "parent_id": "282010215",
+            "kind": "ability",
+            "required_items": {
+              "14": 14,
+              "15": 10,
+              "16": 3,
+              "99": 3
+            },
+            "required_mana": 13280,
+            "effect_kind": "ability",
+            "ability_slot": 3,
+            "required_level": 40
+          },
+          {
+            "id": "282010217",
+            "board_id": 1,
+            "index": 17,
+            "parent_id": "282010215",
+            "kind": "ability",
+            "required_items": {
+              "14": 16,
+              "15": 12,
+              "16": 5,
+              "99": 8
+            },
+            "required_mana": 18000,
+            "effect_kind": "ability",
+            "ability_slot": 3,
+            "required_level": 40
+          },
+          {
+            "id": "282010218",
+            "board_id": 1,
+            "index": 18,
+            "parent_id": "282010217",
+            "kind": "ability",
+            "required_items": {
+              "14": 16,
+              "15": 12,
+              "16": 5,
+              "99": 8
+            },
+            "required_mana": 18000,
+            "effect_kind": "ability",
+            "ability_slot": 3,
+            "required_level": 40
+          },
+          {
+            "id": "282010221",
+            "board_id": 1,
+            "index": 21,
+            "parent_id": "282010220",
+            "kind": "ability",
+            "required_items": {
+              "13": 60,
+              "14": 18,
+              "15": 12
+            },
+            "required_mana": 4380,
+            "effect_kind": "action_skill_level",
+            "ability_slot": 0,
+            "required_level": 25
+          },
+          {
+            "id": "282010223",
+            "board_id": 1,
+            "index": 23,
+            "parent_id": "282010221",
+            "kind": "ability",
+            "required_items": {
+              "14": 14,
+              "15": 10,
+              "16": 5,
+              "99": 5
+            },
+            "required_mana": 16800,
+            "effect_kind": "action_skill_level",
+            "ability_slot": 0,
+            "required_level": 25
+          },
+          {
+            "id": "282010222",
+            "board_id": 1,
+            "index": 22,
+            "parent_id": "282010221",
+            "kind": "ability",
+            "required_items": {
+              "14": 14,
+              "15": 10,
+              "16": 5,
+              "99": 5
+            },
+            "required_mana": 16400,
+            "effect_kind": "action_skill_level",
+            "ability_slot": 0,
+            "required_level": 25
+          },
+          {
+            "id": "282010207",
+            "board_id": 1,
+            "index": 7,
+            "parent_id": "282010205",
+            "kind": "ability",
+            "required_items": {
+              "13": 5,
+              "14": 3
+            },
+            "required_mana": 340,
+            "effect_kind": "ability",
+            "ability_slot": 2,
+            "required_level": 10
+          },
+          {
+            "id": "282010208",
+            "board_id": 1,
+            "index": 8,
+            "parent_id": "282010207",
+            "kind": "ability",
+            "required_items": {
+              "13": 8,
+              "14": 3
+            },
+            "required_mana": 400,
+            "effect_kind": "ability",
+            "ability_slot": 2,
+            "required_level": 10
+          },
+          {
+            "id": "282010210",
+            "board_id": 1,
+            "index": 10,
+            "parent_id": "282010208",
+            "kind": "ability",
+            "required_items": {
+              "13": 10,
+              "14": 5
+            },
+            "required_mana": 640,
+            "effect_kind": "ability",
+            "ability_slot": 2,
+            "required_level": 10
+          },
+          {
+            "id": "282010209",
+            "board_id": 1,
+            "index": 9,
+            "parent_id": "282010208",
+            "kind": "ability",
+            "required_items": {
+              "13": 8,
+              "14": 3
+            },
+            "required_mana": 400,
+            "effect_kind": "ability",
+            "ability_slot": 2,
+            "required_level": 10
+          },
+          {
+            "id": "282010211",
+            "board_id": 1,
+            "index": 11,
+            "parent_id": "282010209",
+            "kind": "ability",
+            "required_items": {
+              "13": 14,
+              "14": 12
+            },
+            "required_mana": 1320,
+            "effect_kind": "ability",
+            "ability_slot": 2,
+            "required_level": 10
+          },
+          {
+            "id": "282010212",
+            "board_id": 1,
+            "index": 12,
+            "parent_id": "282010209",
+            "kind": "ability",
+            "required_items": {
+              "13": 10,
+              "14": 8,
+              "15": 3
+            },
+            "required_mana": 1480,
+            "effect_kind": "ability",
+            "ability_slot": 2,
+            "required_level": 10
+          }
+        ],
+        "2": [
+          {
+            "id": "282010401",
+            "board_id": 2,
+            "index": 1,
+            "parent_id": null,
+            "kind": "ability",
+            "required_items": {
+              "15": 10,
+              "16": 8,
+              "99": 3,
+              "59": 10
+            },
+            "required_mana": 4500,
+            "effect_kind": "ability",
+            "ability_slot": 4,
+            "required_level": 90
+          },
+          {
+            "id": "282010402",
+            "board_id": 2,
+            "index": 2,
+            "parent_id": "282010401",
+            "kind": "ability",
+            "required_items": {
+              "15": 12,
+              "16": 10,
+              "99": 3,
+              "59": 12
+            },
+            "required_mana": 5050,
+            "effect_kind": "ability",
+            "ability_slot": 4,
+            "required_level": 90
+          },
+          {
+            "id": "282010403",
+            "board_id": 2,
+            "index": 3,
+            "parent_id": "282010402",
+            "kind": "ability",
+            "required_items": {
+              "15": 18,
+              "16": 12,
+              "99": 5,
+              "59": 12,
+              "60": 2
+            },
+            "required_mana": 5600,
+            "effect_kind": "ability",
+            "ability_slot": 4,
+            "required_level": 90
+          },
+          {
+            "id": "282010404",
+            "board_id": 2,
+            "index": 4,
+            "parent_id": "282010403",
+            "kind": "ability",
+            "required_items": {
+              "16": 14,
+              "99": 5,
+              "59": 14,
+              "60": 4,
+              "61": 1
+            },
+            "required_mana": 6240,
+            "effect_kind": "ability",
+            "ability_slot": 4,
+            "required_level": 90
+          },
+          {
+            "id": "282010405",
+            "board_id": 2,
+            "index": 5,
+            "parent_id": "282010404",
+            "kind": "ability",
+            "required_items": {
+              "16": 16,
+              "99": 8,
+              "59": 16,
+              "60": 6,
+              "61": 2
+            },
+            "required_mana": 8360,
+            "effect_kind": "ability",
+            "ability_slot": 4,
+            "required_level": 90
+          },
+          {
+            "id": "282010406",
+            "board_id": 2,
+            "index": 6,
+            "parent_id": "282010405",
+            "kind": "ability",
+            "required_items": {
+              "16": 20,
+              "99": 8,
+              "59": 20,
+              "60": 10,
+              "61": 4
+            },
+            "required_mana": 10200,
+            "effect_kind": "ability",
+            "ability_slot": 4,
+            "required_level": 90
+          },
+          {
+            "id": "282010407",
+            "board_id": 2,
+            "index": 7,
+            "parent_id": "282010401",
+            "kind": "ability",
+            "required_items": {
+              "15": 16,
+              "16": 8,
+              "99": 3,
+              "59": 12,
+              "60": 4
+            },
+            "required_mana": 5100,
+            "effect_kind": "ability",
+            "ability_slot": 5,
+            "required_level": 95
+          },
+          {
+            "id": "282010413",
+            "board_id": 2,
+            "index": 13,
+            "parent_id": "282010407",
+            "kind": "ability",
+            "required_items": {
+              "16": 10,
+              "99": 5,
+              "59": 14,
+              "60": 6,
+              "61": 2
+            },
+            "required_mana": 7300,
+            "effect_kind": "ability",
+            "ability_slot": 6,
+            "required_level": 100
+          },
+          {
+            "id": "282010414",
+            "board_id": 2,
+            "index": 14,
+            "parent_id": "282010413",
+            "kind": "ability",
+            "required_items": {
+              "16": 12,
+              "99": 5,
+              "59": 18,
+              "60": 8,
+              "61": 4
+            },
+            "required_mana": 9980,
+            "effect_kind": "ability",
+            "ability_slot": 6,
+            "required_level": 100
+          },
+          {
+            "id": "282010415",
+            "board_id": 2,
+            "index": 15,
+            "parent_id": "282010414",
+            "kind": "ability",
+            "required_items": {
+              "16": 14,
+              "99": 8,
+              "59": 18,
+              "60": 10,
+              "61": 6
+            },
+            "required_mana": 12250,
+            "effect_kind": "ability",
+            "ability_slot": 6,
+            "required_level": 100
+          },
+          {
+            "id": "282010416",
+            "board_id": 2,
+            "index": 16,
+            "parent_id": "282010415",
+            "kind": "ability",
+            "required_items": {
+              "16": 16,
+              "99": 8,
+              "59": 20,
+              "60": 12,
+              "61": 8
+            },
+            "required_mana": 14600,
+            "effect_kind": "ability",
+            "ability_slot": 6,
+            "required_level": 100
+          },
+          {
+            "id": "282010417",
+            "board_id": 2,
+            "index": 17,
+            "parent_id": "282010416",
+            "kind": "ability",
+            "required_items": {
+              "16": 18,
+              "99": 10,
+              "59": 24,
+              "60": 16,
+              "61": 10
+            },
+            "required_mana": 18300,
+            "effect_kind": "ability",
+            "ability_slot": 6,
+            "required_level": 100
+          },
+          {
+            "id": "282010418",
+            "board_id": 2,
+            "index": 18,
+            "parent_id": "282010417",
+            "kind": "ability",
+            "required_items": {
+              "16": 22,
+              "99": 10,
+              "59": 28,
+              "60": 20,
+              "61": 15
+            },
+            "required_mana": 22400,
+            "effect_kind": "ability",
+            "ability_slot": 6,
+            "required_level": 100
+          },
+          {
+            "id": "282010408",
+            "board_id": 2,
+            "index": 8,
+            "parent_id": "282010407",
+            "kind": "ability",
+            "required_items": {
+              "15": 20,
+              "16": 10,
+              "99": 5,
+              "59": 12,
+              "60": 5
+            },
+            "required_mana": 5900,
+            "effect_kind": "ability",
+            "ability_slot": 5,
+            "required_level": 95
+          },
+          {
+            "id": "282010409",
+            "board_id": 2,
+            "index": 9,
+            "parent_id": "282010408",
+            "kind": "ability",
+            "required_items": {
+              "16": 12,
+              "99": 5,
+              "59": 14,
+              "60": 6,
+              "61": 2
+            },
+            "required_mana": 7420,
+            "effect_kind": "ability",
+            "ability_slot": 5,
+            "required_level": 95
+          },
+          {
+            "id": "282010410",
+            "board_id": 2,
+            "index": 10,
+            "parent_id": "282010409",
+            "kind": "ability",
+            "required_items": {
+              "16": 14,
+              "99": 8,
+              "59": 16,
+              "60": 8,
+              "61": 4
+            },
+            "required_mana": 10000,
+            "effect_kind": "ability",
+            "ability_slot": 5,
+            "required_level": 95
+          },
+          {
+            "id": "282010411",
+            "board_id": 2,
+            "index": 11,
+            "parent_id": "282010410",
+            "kind": "ability",
+            "required_items": {
+              "16": 16,
+              "99": 8,
+              "59": 20,
+              "60": 10,
+              "61": 6
+            },
+            "required_mana": 12700,
+            "effect_kind": "ability",
+            "ability_slot": 5,
+            "required_level": 95
+          },
+          {
+            "id": "282010412",
+            "board_id": 2,
+            "index": 12,
+            "parent_id": "282010411",
+            "kind": "ability",
+            "required_items": {
+              "16": 18,
+              "99": 10,
+              "59": 24,
+              "60": 15,
+              "61": 10
+            },
+            "required_mana": 14100,
+            "effect_kind": "ability",
+            "ability_slot": 5,
+            "required_level": 95
+          }
+        ]
+      }
+    },
+    "121002": {
+      "id": "121002",
+      "asset_id": "onmyoji_boy",
+      "name": "水善",
+      "level": 1,
+      "rarity": 5,
+      "element": 1,
+      "gender": "Male",
+      "races": [
+        "Human",
+        "Mystery"
+      ],
+      "speciality": "Jammer",
+      "hp": 65,
+      "atk": 7,
+      "main_hp": 65,
+      "unison_hp": 0,
+      "main_atk": 7,
+      "unison_atk": 0,
+      "max_level": 100,
+      "status_curve": {
+        "1": {
+          "hp": 65,
+          "atk": 7
+        },
+        "10": {
+          "hp": 657,
+          "atk": 79
+        },
+        "80": {
+          "hp": 3942,
+          "atk": 477
+        },
+        "100": {
+          "hp": 4337,
+          "atk": 525
+        }
+      },
+      "exp_curve_id": "1",
+      "exp_curve": {
+        "1": 0,
+        "2": 10,
+        "3": 20,
+        "4": 38,
+        "5": 64,
+        "6": 100,
+        "7": 146,
+        "8": 202,
+        "9": 269,
+        "10": 348,
+        "11": 440,
+        "12": 545,
+        "13": 663,
+        "14": 796,
+        "15": 944,
+        "16": 1108,
+        "17": 1288,
+        "18": 1485,
+        "19": 1699,
+        "20": 1932,
+        "21": 2184,
+        "22": 2455,
+        "23": 2746,
+        "24": 3058,
+        "25": 3392,
+        "26": 3748,
+        "27": 4126,
+        "28": 4528,
+        "29": 4954,
+        "30": 5404,
+        "31": 5880,
+        "32": 6382,
+        "33": 6910,
+        "34": 7465,
+        "35": 8048,
+        "36": 8660,
+        "37": 9301,
+        "38": 9971,
+        "39": 10672,
+        "40": 11416,
+        "41": 12204,
+        "42": 13037,
+        "43": 13917,
+        "44": 14844,
+        "45": 15820,
+        "46": 16846,
+        "47": 17924,
+        "48": 19054,
+        "49": 20238,
+        "50": 21477,
+        "51": 22772,
+        "52": 24124,
+        "53": 25535,
+        "54": 27006,
+        "55": 28538,
+        "56": 30132,
+        "57": 31789,
+        "58": 33511,
+        "59": 35299,
+        "60": 37241,
+        "61": 39343,
+        "62": 41612,
+        "63": 44054,
+        "64": 46675,
+        "65": 49481,
+        "66": 52479,
+        "67": 55675,
+        "68": 59075,
+        "69": 62685,
+        "70": 66600,
+        "71": 70832,
+        "72": 75394,
+        "73": 80298,
+        "74": 85556,
+        "75": 91180,
+        "76": 97183,
+        "77": 103576,
+        "78": 110372,
+        "79": 117584,
+        "80": 125223,
+        "81": 134364,
+        "82": 143505,
+        "83": 152646,
+        "84": 161787,
+        "85": 170928,
+        "86": 180069,
+        "87": 189210,
+        "88": 198351,
+        "89": 207492,
+        "90": 216633,
+        "91": 225774,
+        "92": 234915,
+        "93": 244056,
+        "94": 253197,
+        "95": 262338,
+        "96": 271479,
+        "97": 280620,
+        "98": 289761,
+        "99": 298902,
+        "100": 308043
+      },
+      "evolution_bonus": {
+        "atk_1": 60,
+        "hp_1": 300,
+        "atk_2": 0,
+        "hp_2": 0
+      },
+      "skill": {
+        "name": "彷如紫水蛊毒之咒",
+        "description": "以自身为圆心施展诅咒魔法阵，短时间内对靠近的敌人造成水属性伤害＋赋予中毒效果／赋予水属性角色攻击力提升效果。",
+        "max_skill_point": 600,
+        "action_id": "battle/action/skill/action/rare5/onmyoji_boy$onmyoji_boy_1",
+        "runtime": {
+          "kind": "area_attack",
+          "delay_frames": 3,
+          "radius": 200.0,
+          "max_hits": 10,
+          "attack_multiplier": 1.1666666666666667,
+          "conditions": [
+            {
+              "delay_frames": 3,
+              "source_kind": "ACPoison",
+              "kind": "poison",
+              "target": "enemy",
+              "duration_frames": 2400,
+              "strength_raw": 1500.0,
+              "interval_raw": 1.0,
+              "tick_frames": 60,
+              "tick_status": "adapter pending exact poison interval unit recovery"
+            },
+            {
+              "delay_frames": 0,
+              "source_kind": "ACAttackPoint",
+              "kind": "attack_up",
+              "target": "party",
+              "duration_frames": 960,
+              "amount": 0.8
+            }
+          ],
+          "status": "canonical hit delay/core parameters/condition payloads; visual effects and full target semantics pending"
+        },
+        "sha256": "6527ba5ced39db2cca5fe4b563aeb24c305bf0480a0653dae31ce97433560606"
+      },
+      "ability_ids": [
+        "1210021",
+        "1210022",
+        "1210023",
+        "1210024",
+        "1210025",
+        "1210026"
+      ],
+      "abilities": [
+        {
+          "ability_id": "1210021",
+          "row_index": 0,
+          "unisonable": true,
+          "statue_group_id": "hp_skill",
+          "trigger_code": 0,
+          "trigger_kind": "None",
+          "trigger_threshold_raw": 0.0,
+          "trigger_threshold": 0.0,
+          "content_code": 205,
+          "content_kind": "FixedHeal",
+          "target_code": 0,
+          "power1_raw": 10000.0,
+          "first_max_raw": 20000.0,
+          "power1": 0.1,
+          "first_max": 0.2
+        },
+        {
+          "ability_id": "1210022",
+          "row_index": 0,
+          "unisonable": true,
+          "statue_group_id": "special",
+          "trigger_code": 0,
+          "trigger_kind": "None",
+          "trigger_threshold_raw": 0.0,
+          "trigger_threshold": 0.0,
+          "content_code": 512,
+          "content_kind": "FrozenAttackSlayer",
+          "target_code": 5,
+          "power1_raw": 25000.0,
+          "first_max_raw": 50000.0,
+          "power1": 0.25,
+          "first_max": 0.5
+        },
+        {
+          "ability_id": "1210023",
+          "row_index": 0,
+          "unisonable": false,
+          "statue_group_id": "attack_common",
+          "trigger_code": 0,
+          "trigger_kind": "None",
+          "trigger_threshold_raw": 0.0,
+          "trigger_threshold": 0.0,
+          "content_code": 117,
+          "content_kind": "ParalysisSlayer",
+          "target_code": 5,
+          "power1_raw": 12500.0,
+          "first_max_raw": 25000.0,
+          "power1": 0.125,
+          "first_max": 0.25
+        },
+        {
+          "ability_id": "1210023",
+          "row_index": 1,
+          "unisonable": false,
+          "statue_group_id": "attack_common",
+          "trigger_code": 0,
+          "trigger_kind": "None",
+          "trigger_threshold_raw": 0.0,
+          "trigger_threshold": 0.0,
+          "content_code": 145,
+          "content_kind": "ParalysisDirectDamageSlayer",
+          "target_code": 5,
+          "power1_raw": 90000.0,
+          "first_max_raw": 180000.0,
+          "power1": 0.9,
+          "first_max": 1.8
+        },
+        {
+          "ability_id": "1210024",
+          "row_index": 0,
+          "unisonable": true,
+          "statue_group_id": "defense_blue",
+          "trigger_code": 0,
+          "trigger_kind": "None",
+          "trigger_threshold_raw": 0.0,
+          "trigger_threshold": 0.0,
+          "content_code": 309,
+          "content_kind": "ResistanceToFrozenEnemy",
+          "target_code": 5,
+          "power1_raw": 2500.0,
+          "first_max_raw": 5000.0,
+          "power1": 0.025,
+          "first_max": 0.05
+        },
+        {
+          "ability_id": "1210025",
+          "row_index": 0,
+          "unisonable": true,
+          "statue_group_id": "special",
+          "trigger_code": 0,
+          "trigger_kind": "None",
+          "trigger_threshold_raw": 0.0,
+          "trigger_threshold": 0.0,
+          "content_code": 145,
+          "content_kind": "ParalysisDirectDamageSlayer",
+          "target_code": 5,
+          "power1_raw": 15000.0,
+          "first_max_raw": 30000.0,
+          "power1": 0.15,
+          "first_max": 0.3
+        },
+        {
+          "ability_id": "1210026",
+          "row_index": 0,
+          "unisonable": true,
+          "statue_group_id": "special",
+          "trigger_code": 0,
+          "trigger_kind": "None",
+          "trigger_threshold_raw": 0.0,
+          "trigger_threshold": 0.0,
+          "content_code": 117,
+          "content_kind": "ParalysisSlayer",
+          "target_code": 5,
+          "power1_raw": 3750.0,
+          "first_max_raw": 7500.0,
+          "power1": 0.0375,
+          "first_max": 0.075
+        }
+      ],
+      "mana_boards": {
+        "1": [
+          {
+            "id": "242004201",
+            "board_id": 1,
+            "index": 1,
+            "parent_id": null,
+            "kind": "ability",
+            "required_items": {
+              "5": 3
+            },
+            "required_mana": 60,
+            "effect_kind": "ability",
+            "ability_slot": 1,
+            "required_level": null
+          },
+          {
+            "id": "242004202",
+            "board_id": 1,
+            "index": 2,
+            "parent_id": "242004201",
+            "kind": "ability",
+            "required_items": {
+              "5": 5
+            },
+            "required_mana": 100,
+            "effect_kind": "ability",
+            "ability_slot": 1,
+            "required_level": null
+          },
+          {
+            "id": "242004204",
+            "board_id": 1,
+            "index": 4,
+            "parent_id": "242004202",
+            "kind": "ability",
+            "required_items": {
+              "5": 6
+            },
+            "required_mana": 160,
+            "effect_kind": "ability",
+            "ability_slot": 1,
+            "required_level": null
+          },
+          {
+            "id": "242004203",
+            "board_id": 1,
+            "index": 3,
+            "parent_id": "242004202",
+            "kind": "ability",
+            "required_items": {
+              "5": 5
+            },
+            "required_mana": 100,
+            "effect_kind": "ability",
+            "ability_slot": 1,
+            "required_level": null
+          },
+          {
+            "id": "242004206",
+            "board_id": 1,
+            "index": 6,
+            "parent_id": "242004203",
+            "kind": "ability",
+            "required_items": {
+              "5": 5,
+              "6": 3
+            },
+            "required_mana": 340,
+            "effect_kind": "ability",
+            "ability_slot": 1,
+            "required_level": null
+          },
+          {
+            "id": "242004205",
+            "board_id": 1,
+            "index": 5,
+            "parent_id": "242004201",
+            "kind": "ability",
+            "required_items": {
+              "5": 12
+            },
+            "required_mana": 240,
+            "effect_kind": "ability",
+            "ability_slot": 1,
+            "required_level": null
+          },
+          {
+            "id": "242004207",
+            "board_id": 1,
+            "index": 7,
+            "parent_id": "242004205",
+            "kind": "ability",
+            "required_items": {
+              "5": 5,
+              "6": 3
+            },
+            "required_mana": 340,
+            "effect_kind": "ability",
+            "ability_slot": 2,
+            "required_level": 10
+          },
+          {
+            "id": "242004208",
+            "board_id": 1,
+            "index": 8,
+            "parent_id": "242004207",
+            "kind": "ability",
+            "required_items": {
+              "5": 8,
+              "6": 3
+            },
+            "required_mana": 400,
+            "effect_kind": "ability",
+            "ability_slot": 2,
+            "required_level": 10
+          },
+          {
+            "id": "242004209",
+            "board_id": 1,
+            "index": 9,
+            "parent_id": "242004207",
+            "kind": "ability",
+            "required_items": {
+              "5": 8,
+              "6": 3
+            },
+            "required_mana": 400,
+            "effect_kind": "ability",
+            "ability_slot": 2,
+            "required_level": 10
+          },
+          {
+            "id": "242004210",
+            "board_id": 1,
+            "index": 10,
+            "parent_id": "242004209",
+            "kind": "ability",
+            "required_items": {
+              "5": 10,
+              "6": 5
+            },
+            "required_mana": 640,
+            "effect_kind": "ability",
+            "ability_slot": 2,
+            "required_level": 10
+          },
+          {
+            "id": "242004211",
+            "board_id": 1,
+            "index": 11,
+            "parent_id": "242004210",
+            "kind": "ability",
+            "required_items": {
+              "5": 14,
+              "6": 12
+            },
+            "required_mana": 1320,
+            "effect_kind": "ability",
+            "ability_slot": 2,
+            "required_level": 10
+          },
+          {
+            "id": "242004212",
+            "board_id": 1,
+            "index": 12,
+            "parent_id": "242004211",
+            "kind": "ability",
+            "required_items": {
+              "5": 10,
+              "6": 8,
+              "7": 3
+            },
+            "required_mana": 1480,
+            "effect_kind": "ability",
+            "ability_slot": 2,
+            "required_level": 10
+          },
+          {
+            "id": "242004219",
+            "board_id": 1,
+            "index": 19,
+            "parent_id": "242004205",
+            "kind": "ability",
+            "required_items": {
+              "5": 8,
+              "6": 6,
+              "7": 3
+            },
+            "required_mana": 1280,
+            "effect_kind": "action_skill_evolution",
+            "ability_slot": 0,
+            "required_level": 25
+          },
+          {
+            "id": "242004220",
+            "board_id": 1,
+            "index": 20,
+            "parent_id": "242004219",
+            "kind": "ability",
+            "required_items": {
+              "5": 35,
+              "6": 10,
+              "7": 5
+            },
+            "required_mana": 2120,
+            "effect_kind": "action_skill_level",
+            "ability_slot": 0,
+            "required_level": 25
+          },
+          {
+            "id": "242004213",
+            "board_id": 1,
+            "index": 13,
+            "parent_id": "242004220",
+            "kind": "ability",
+            "required_items": {
+              "5": 18,
+              "6": 10,
+              "7": 6,
+              "8": 1
+            },
+            "required_mana": 3160,
+            "effect_kind": "ability",
+            "ability_slot": 3,
+            "required_level": 40
+          },
+          {
+            "id": "242004214",
+            "board_id": 1,
+            "index": 14,
+            "parent_id": "242004213",
+            "kind": "ability",
+            "required_items": {
+              "6": 12,
+              "7": 8,
+              "8": 3,
+              "99": 1
+            },
+            "required_mana": 7120,
+            "effect_kind": "ability",
+            "ability_slot": 3,
+            "required_level": 40
+          },
+          {
+            "id": "242004215",
+            "board_id": 1,
+            "index": 15,
+            "parent_id": "242004214",
+            "kind": "ability",
+            "required_items": {
+              "6": 12,
+              "7": 8,
+              "8": 3,
+              "99": 1
+            },
+            "required_mana": 7120,
+            "effect_kind": "ability",
+            "ability_slot": 3,
+            "required_level": 40
+          },
+          {
+            "id": "242004218",
+            "board_id": 1,
+            "index": 18,
+            "parent_id": "242004215",
+            "kind": "ability",
+            "required_items": {
+              "6": 16,
+              "7": 12,
+              "8": 5,
+              "99": 8
+            },
+            "required_mana": 18000,
+            "effect_kind": "ability",
+            "ability_slot": 3,
+            "required_level": 40
+          },
+          {
+            "id": "242004216",
+            "board_id": 1,
+            "index": 16,
+            "parent_id": "242004215",
+            "kind": "ability",
+            "required_items": {
+              "6": 14,
+              "7": 10,
+              "8": 3,
+              "99": 3
+            },
+            "required_mana": 13280,
+            "effect_kind": "ability",
+            "ability_slot": 3,
+            "required_level": 40
+          },
+          {
+            "id": "242004217",
+            "board_id": 1,
+            "index": 17,
+            "parent_id": "242004215",
+            "kind": "ability",
+            "required_items": {
+              "6": 16,
+              "7": 12,
+              "8": 5,
+              "99": 8
+            },
+            "required_mana": 18000,
+            "effect_kind": "ability",
+            "ability_slot": 3,
+            "required_level": 40
+          },
+          {
+            "id": "242004221",
+            "board_id": 1,
+            "index": 21,
+            "parent_id": "242004220",
+            "kind": "ability",
+            "required_items": {
+              "5": 60,
+              "6": 18,
+              "7": 12
+            },
+            "required_mana": 4380,
+            "effect_kind": "action_skill_level",
+            "ability_slot": 0,
+            "required_level": 25
+          },
+          {
+            "id": "242004223",
+            "board_id": 1,
+            "index": 23,
+            "parent_id": "242004221",
+            "kind": "ability",
+            "required_items": {
+              "6": 14,
+              "7": 10,
+              "8": 5,
+              "99": 5
+            },
+            "required_mana": 16800,
+            "effect_kind": "action_skill_level",
+            "ability_slot": 0,
+            "required_level": 25
+          },
+          {
+            "id": "242004222",
+            "board_id": 1,
+            "index": 22,
+            "parent_id": "242004221",
+            "kind": "ability",
+            "required_items": {
+              "6": 14,
+              "7": 10,
+              "8": 5,
+              "99": 5
+            },
+            "required_mana": 16400,
+            "effect_kind": "action_skill_level",
+            "ability_slot": 0,
+            "required_level": 25
+          }
+        ],
+        "2": [
+          {
+            "id": "242004401",
+            "board_id": 2,
+            "index": 1,
+            "parent_id": null,
+            "kind": "ability",
+            "required_items": {
+              "7": 10,
+              "8": 8,
+              "99": 3,
+              "53": 10
+            },
+            "required_mana": 4500,
+            "effect_kind": "ability",
+            "ability_slot": 4,
+            "required_level": 90
+          },
+          {
+            "id": "242004402",
+            "board_id": 2,
+            "index": 2,
+            "parent_id": "242004401",
+            "kind": "ability",
+            "required_items": {
+              "7": 12,
+              "8": 10,
+              "99": 3,
+              "53": 12
+            },
+            "required_mana": 5050,
+            "effect_kind": "ability",
+            "ability_slot": 4,
+            "required_level": 90
+          },
+          {
+            "id": "242004403",
+            "board_id": 2,
+            "index": 3,
+            "parent_id": "242004402",
+            "kind": "ability",
+            "required_items": {
+              "7": 18,
+              "8": 12,
+              "99": 5,
+              "53": 12,
+              "54": 2
+            },
+            "required_mana": 5600,
+            "effect_kind": "ability",
+            "ability_slot": 4,
+            "required_level": 90
+          },
+          {
+            "id": "242004404",
+            "board_id": 2,
+            "index": 4,
+            "parent_id": "242004403",
+            "kind": "ability",
+            "required_items": {
+              "8": 14,
+              "99": 5,
+              "53": 14,
+              "54": 4,
+              "55": 1
+            },
+            "required_mana": 6240,
+            "effect_kind": "ability",
+            "ability_slot": 4,
+            "required_level": 90
+          },
+          {
+            "id": "242004405",
+            "board_id": 2,
+            "index": 5,
+            "parent_id": "242004404",
+            "kind": "ability",
+            "required_items": {
+              "8": 16,
+              "99": 8,
+              "53": 16,
+              "54": 6,
+              "55": 2
+            },
+            "required_mana": 8360,
+            "effect_kind": "ability",
+            "ability_slot": 4,
+            "required_level": 90
+          },
+          {
+            "id": "242004406",
+            "board_id": 2,
+            "index": 6,
+            "parent_id": "242004405",
+            "kind": "ability",
+            "required_items": {
+              "8": 20,
+              "99": 8,
+              "53": 20,
+              "54": 10,
+              "55": 4
+            },
+            "required_mana": 10200,
+            "effect_kind": "ability",
+            "ability_slot": 4,
+            "required_level": 90
+          },
+          {
+            "id": "242004407",
+            "board_id": 2,
+            "index": 7,
+            "parent_id": "242004401",
+            "kind": "ability",
+            "required_items": {
+              "7": 16,
+              "8": 8,
+              "99": 3,
+              "53": 12,
+              "54": 4
+            },
+            "required_mana": 5100,
+            "effect_kind": "ability",
+            "ability_slot": 5,
+            "required_level": 95
+          },
+          {
+            "id": "242004413",
+            "board_id": 2,
+            "index": 13,
+            "parent_id": "242004407",
+            "kind": "ability",
+            "required_items": {
+              "8": 10,
+              "99": 5,
+              "53": 14,
+              "54": 6,
+              "55": 2
+            },
+            "required_mana": 7300,
+            "effect_kind": "ability",
+            "ability_slot": 6,
+            "required_level": 100
+          },
+          {
+            "id": "242004414",
+            "board_id": 2,
+            "index": 14,
+            "parent_id": "242004413",
+            "kind": "ability",
+            "required_items": {
+              "8": 12,
+              "99": 5,
+              "53": 18,
+              "54": 8,
+              "55": 4
+            },
+            "required_mana": 9980,
+            "effect_kind": "ability",
+            "ability_slot": 6,
+            "required_level": 100
+          },
+          {
+            "id": "242004415",
+            "board_id": 2,
+            "index": 15,
+            "parent_id": "242004414",
+            "kind": "ability",
+            "required_items": {
+              "8": 14,
+              "99": 8,
+              "53": 18,
+              "54": 10,
+              "55": 6
+            },
+            "required_mana": 12250,
+            "effect_kind": "ability",
+            "ability_slot": 6,
+            "required_level": 100
+          },
+          {
+            "id": "242004416",
+            "board_id": 2,
+            "index": 16,
+            "parent_id": "242004415",
+            "kind": "ability",
+            "required_items": {
+              "8": 16,
+              "99": 8,
+              "53": 20,
+              "54": 12,
+              "55": 8
+            },
+            "required_mana": 14600,
+            "effect_kind": "ability",
+            "ability_slot": 6,
+            "required_level": 100
+          },
+          {
+            "id": "242004417",
+            "board_id": 2,
+            "index": 17,
+            "parent_id": "242004416",
+            "kind": "ability",
+            "required_items": {
+              "8": 18,
+              "99": 10,
+              "53": 24,
+              "54": 16,
+              "55": 10
+            },
+            "required_mana": 18300,
+            "effect_kind": "ability",
+            "ability_slot": 6,
+            "required_level": 100
+          },
+          {
+            "id": "242004418",
+            "board_id": 2,
+            "index": 18,
+            "parent_id": "242004417",
+            "kind": "ability",
+            "required_items": {
+              "8": 22,
+              "99": 10,
+              "53": 28,
+              "54": 20,
+              "55": 15
+            },
+            "required_mana": 22400,
+            "effect_kind": "ability",
+            "ability_slot": 6,
+            "required_level": 100
+          },
+          {
+            "id": "242004408",
+            "board_id": 2,
+            "index": 8,
+            "parent_id": "242004407",
+            "kind": "ability",
+            "required_items": {
+              "7": 20,
+              "8": 10,
+              "99": 5,
+              "53": 12,
+              "54": 5
+            },
+            "required_mana": 5900,
+            "effect_kind": "ability",
+            "ability_slot": 5,
+            "required_level": 95
+          },
+          {
+            "id": "242004409",
+            "board_id": 2,
+            "index": 9,
+            "parent_id": "242004408",
+            "kind": "ability",
+            "required_items": {
+              "8": 12,
+              "99": 5,
+              "53": 14,
+              "54": 6,
+              "55": 2
+            },
+            "required_mana": 7420,
+            "effect_kind": "ability",
+            "ability_slot": 5,
+            "required_level": 95
+          },
+          {
+            "id": "242004410",
+            "board_id": 2,
+            "index": 10,
+            "parent_id": "242004409",
+            "kind": "ability",
+            "required_items": {
+              "8": 14,
+              "99": 8,
+              "53": 16,
+              "54": 8,
+              "55": 4
+            },
+            "required_mana": 10000,
+            "effect_kind": "ability",
+            "ability_slot": 5,
+            "required_level": 95
+          },
+          {
+            "id": "242004411",
+            "board_id": 2,
+            "index": 11,
+            "parent_id": "242004410",
+            "kind": "ability",
+            "required_items": {
+              "8": 16,
+              "99": 8,
+              "53": 20,
+              "54": 10,
+              "55": 6
+            },
+            "required_mana": 12700,
+            "effect_kind": "ability",
+            "ability_slot": 5,
+            "required_level": 95
+          },
+          {
+            "id": "242004412",
+            "board_id": 2,
+            "index": 12,
+            "parent_id": "242004411",
+            "kind": "ability",
+            "required_items": {
+              "8": 18,
+              "99": 10,
+              "53": 24,
+              "54": 15,
+              "55": 10
+            },
+            "required_mana": 14100,
+            "effect_kind": "ability",
+            "ability_slot": 5,
+            "required_level": 95
+          }
+        ]
+      }
+    },
+    "131004": {
+      "id": "131004",
+      "asset_id": "thunder_archer",
+      "name": "梅媞斯",
+      "level": 1,
+      "rarity": 5,
+      "element": 2,
+      "gender": "Female",
+      "races": [
+        "Human"
+      ],
+      "speciality": "Attacker",
+      "hp": 45,
+      "atk": 12,
+      "main_hp": 45,
+      "unison_hp": 0,
+      "main_atk": 12,
+      "unison_atk": 0,
+      "max_level": 100,
+      "status_curve": {
+        "1": {
+          "hp": 45,
+          "atk": 12
+        },
+        "10": {
+          "hp": 450,
+          "atk": 120
+        },
+        "80": {
+          "hp": 2700,
+          "atk": 720
+        },
+        "100": {
+          "hp": 2970,
+          "atk": 792
+        }
+      },
+      "exp_curve_id": "1",
+      "exp_curve": {
+        "1": 0,
+        "2": 10,
+        "3": 20,
+        "4": 38,
+        "5": 64,
+        "6": 100,
+        "7": 146,
+        "8": 202,
+        "9": 269,
+        "10": 348,
+        "11": 440,
+        "12": 545,
+        "13": 663,
+        "14": 796,
+        "15": 944,
+        "16": 1108,
+        "17": 1288,
+        "18": 1485,
+        "19": 1699,
+        "20": 1932,
+        "21": 2184,
+        "22": 2455,
+        "23": 2746,
+        "24": 3058,
+        "25": 3392,
+        "26": 3748,
+        "27": 4126,
+        "28": 4528,
+        "29": 4954,
+        "30": 5404,
+        "31": 5880,
+        "32": 6382,
+        "33": 6910,
+        "34": 7465,
+        "35": 8048,
+        "36": 8660,
+        "37": 9301,
+        "38": 9971,
+        "39": 10672,
+        "40": 11416,
+        "41": 12204,
+        "42": 13037,
+        "43": 13917,
+        "44": 14844,
+        "45": 15820,
+        "46": 16846,
+        "47": 17924,
+        "48": 19054,
+        "49": 20238,
+        "50": 21477,
+        "51": 22772,
+        "52": 24124,
+        "53": 25535,
+        "54": 27006,
+        "55": 28538,
+        "56": 30132,
+        "57": 31789,
+        "58": 33511,
+        "59": 35299,
+        "60": 37241,
+        "61": 39343,
+        "62": 41612,
+        "63": 44054,
+        "64": 46675,
+        "65": 49481,
+        "66": 52479,
+        "67": 55675,
+        "68": 59075,
+        "69": 62685,
+        "70": 66600,
+        "71": 70832,
+        "72": 75394,
+        "73": 80298,
+        "74": 85556,
+        "75": 91180,
+        "76": 97183,
+        "77": 103576,
+        "78": 110372,
+        "79": 117584,
+        "80": 125223,
+        "81": 134364,
+        "82": 143505,
+        "83": 152646,
+        "84": 161787,
+        "85": 170928,
+        "86": 180069,
+        "87": 189210,
+        "88": 198351,
+        "89": 207492,
+        "90": 216633,
+        "91": 225774,
+        "92": 234915,
+        "93": 244056,
+        "94": 253197,
+        "95": 262338,
+        "96": 271479,
+        "97": 280620,
+        "98": 289761,
+        "99": 298902,
+        "100": 308043
+      },
+      "evolution_bonus": {
+        "atk_1": 60,
+        "hp_1": 300,
+        "atk_2": 0,
+        "hp_2": 0
+      },
+      "skill": {
+        "name": "雷箭之雨",
+        "description": "向天空射箭，对最近的敌方降下雷矢之雨，对其周围的敌方造成雷属性伤害【对麻痹效果下的敌方伤害提升】。",
+        "max_skill_point": 490,
+        "action_id": "battle/action/skill/action/rare5/thunder_archer$thunder_archer_1",
+        "runtime": {
+          "kind": "area_attack",
+          "delay_frames": 80,
+          "radius": 200.0,
+          "max_hits": 5,
+          "attack_multiplier": 4.9,
+          "conditions": [],
+          "status": "canonical hit delay/core parameters/condition payloads; visual effects and full target semantics pending"
+        },
+        "sha256": "916fa6938986440e80f36cae1f431c7225a0388a96bc65e0ef736538aeab52b6"
+      },
+      "ability_ids": [
+        "1310041",
+        "1310042",
+        "1310043",
+        "1310044",
+        "1310045",
+        "1310046"
+      ],
+      "abilities": [
+        {
+          "ability_id": "1310041",
+          "row_index": 0,
+          "unisonable": true,
+          "statue_group_id": "attack_common",
+          "trigger_code": 0,
+          "trigger_kind": "None",
+          "trigger_threshold_raw": 0.0,
+          "trigger_threshold": 0.0,
+          "content_code": 32,
+          "content_kind": "DirectDamage",
+          "target_code": 0,
+          "power1_raw": 10000.0,
+          "first_max_raw": 20000.0,
+          "power1": 0.1,
+          "first_max": 0.2
+        },
+        {
+          "ability_id": "1310041",
+          "row_index": 1,
+          "unisonable": true,
+          "statue_group_id": "attack_common",
+          "trigger_code": 0,
+          "trigger_kind": "None",
+          "trigger_threshold_raw": 0.0,
+          "trigger_threshold": 0.0,
+          "content_code": 4,
+          "content_kind": "ResistanceAllElement",
+          "target_code": 0,
+          "power1_raw": 0.0,
+          "first_max_raw": 0.0,
+          "power1": 0.0,
+          "first_max": 0.0
+        },
+        {
+          "ability_id": "1310041",
+          "row_index": 2,
+          "unisonable": true,
+          "statue_group_id": "attack_common",
+          "trigger_code": 0,
+          "trigger_kind": "None",
+          "trigger_threshold_raw": 0.0,
+          "trigger_threshold": 0.0,
+          "content_code": 4,
+          "content_kind": "ResistanceAllElement",
+          "target_code": 0,
+          "power1_raw": 0.0,
+          "first_max_raw": 0.0,
+          "power1": 0.0,
+          "first_max": 0.0
+        },
+        {
+          "ability_id": "1310042",
+          "row_index": 0,
+          "unisonable": true,
+          "statue_group_id": "attack_common",
+          "trigger_code": 0,
+          "trigger_kind": "None",
+          "trigger_threshold_raw": 0.0,
+          "trigger_threshold": 0.0,
+          "content_code": 32,
+          "content_kind": "DirectDamage",
+          "target_code": 0,
+          "power1_raw": 10000.0,
+          "first_max_raw": 20000.0,
+          "power1": 0.1,
+          "first_max": 0.2
+        },
+        {
+          "ability_id": "1310042",
+          "row_index": 1,
+          "unisonable": true,
+          "statue_group_id": "attack_common",
+          "trigger_code": 0,
+          "trigger_kind": "None",
+          "trigger_threshold_raw": 0.0,
+          "trigger_threshold": 0.0,
+          "content_code": 32,
+          "content_kind": "DirectDamage",
+          "target_code": 0,
+          "power1_raw": 21000.0,
+          "first_max_raw": 30000.0,
+          "power1": 0.21,
+          "first_max": 0.3
+        },
+        {
+          "ability_id": "1310042",
+          "row_index": 2,
+          "unisonable": true,
+          "statue_group_id": "attack_common",
+          "trigger_code": 8,
+          "trigger_kind": "MultiballAppear",
+          "trigger_threshold_raw": 100000.0,
+          "trigger_threshold": 1.0,
+          "content_code": 211,
+          "content_kind": "AddFeverPoint",
+          "target_code": 0,
+          "power1_raw": 15000.0,
+          "first_max_raw": 30000.0,
+          "power1": 0.15,
+          "first_max": 0.3
+        },
+        {
+          "ability_id": "1310043",
+          "row_index": 0,
+          "unisonable": false,
+          "statue_group_id": "fever",
+          "trigger_code": 23,
+          "trigger_kind": "SkillMax",
+          "trigger_threshold_raw": 100000.0,
+          "trigger_threshold": 1.0,
+          "content_code": 32,
+          "content_kind": "DirectDamage",
+          "target_code": 0,
+          "power1_raw": 25000.0,
+          "first_max_raw": 50000.0,
+          "power1": 0.25,
+          "first_max": 0.5
+        },
+        {
+          "ability_id": "1310043",
+          "row_index": 1,
+          "unisonable": false,
+          "statue_group_id": "fever",
+          "trigger_code": 23,
+          "trigger_kind": "SkillMax",
+          "trigger_threshold_raw": 100000.0,
+          "trigger_threshold": 1.0,
+          "content_code": 213,
+          "content_kind": "DirectDamageDownPrevent",
+          "target_code": 0,
+          "power1_raw": 25000000.0,
+          "first_max_raw": 50000000.0,
+          "power1": 250.0,
+          "first_max": 500.0
+        },
+        {
+          "ability_id": "1310043",
+          "row_index": 2,
+          "unisonable": false,
+          "statue_group_id": "fever",
+          "trigger_code": 23,
+          "trigger_kind": "SkillMax",
+          "trigger_threshold_raw": 100000.0,
+          "trigger_threshold": 1.0,
+          "content_code": 213,
+          "content_kind": "DirectDamageDownPrevent",
+          "target_code": 0,
+          "power1_raw": 51000000.0,
+          "first_max_raw": 55000000.0,
+          "power1": 510.0,
+          "first_max": 550.0
+        },
+        {
+          "ability_id": "1310043",
+          "row_index": 3,
+          "unisonable": false,
+          "statue_group_id": "fever",
+          "trigger_code": 8,
+          "trigger_kind": "MultiballAppear",
+          "trigger_threshold_raw": 100000.0,
+          "trigger_threshold": 1.0,
+          "content_code": 32,
+          "content_kind": "DirectDamage",
+          "target_code": 0,
+          "power1_raw": 50000.0,
+          "first_max_raw": 100000.0,
+          "power1": 0.5,
+          "first_max": 1.0
+        },
+        {
+          "ability_id": "1310044",
+          "row_index": 0,
+          "unisonable": true,
+          "statue_group_id": "special",
+          "trigger_code": 58,
+          "trigger_kind": "ElementVariety",
+          "trigger_threshold_raw": 0.0,
+          "trigger_threshold": 0.0,
+          "content_code": 51,
+          "content_kind": "CharacterSlayer",
+          "target_code": 0,
+          "power1_raw": 50000.0,
+          "first_max_raw": 100000.0,
+          "power1": 0.5,
+          "first_max": 1.0
+        },
+        {
+          "ability_id": "1310045",
+          "row_index": 0,
+          "unisonable": true,
+          "statue_group_id": "attack_common",
+          "trigger_code": 0,
+          "trigger_kind": "None",
+          "trigger_threshold_raw": 0.0,
+          "trigger_threshold": 0.0,
+          "content_code": 32,
+          "content_kind": "DirectDamage",
+          "target_code": 0,
+          "power1_raw": 15000.0,
+          "first_max_raw": 30000.0,
+          "power1": 0.15,
+          "first_max": 0.3
+        },
+        {
+          "ability_id": "1310046",
+          "row_index": 0,
+          "unisonable": true,
+          "statue_group_id": "attack_common",
+          "trigger_code": 8,
+          "trigger_kind": "MultiballAppear",
+          "trigger_threshold_raw": 100000.0,
+          "trigger_threshold": 1.0,
+          "content_code": 32,
+          "content_kind": "DirectDamage",
+          "target_code": 0,
+          "power1_raw": 12500.0,
+          "first_max_raw": 25000.0,
+          "power1": 0.125,
+          "first_max": 0.25
+        }
+      ],
+      "mana_boards": {
+        "1": [
+          {
+            "id": "262008201",
+            "board_id": 1,
+            "index": 1,
+            "parent_id": null,
+            "kind": "ability",
+            "required_items": {
+              "9": 3
+            },
+            "required_mana": 60,
+            "effect_kind": "ability",
+            "ability_slot": 1,
+            "required_level": null
+          },
+          {
+            "id": "262008202",
+            "board_id": 1,
+            "index": 2,
+            "parent_id": "262008201",
+            "kind": "ability",
+            "required_items": {
+              "9": 5
+            },
+            "required_mana": 100,
+            "effect_kind": "ability",
+            "ability_slot": 1,
+            "required_level": null
+          },
+          {
+            "id": "262008203",
+            "board_id": 1,
+            "index": 3,
+            "parent_id": "262008202",
+            "kind": "ability",
+            "required_items": {
+              "9": 5
+            },
+            "required_mana": 100,
+            "effect_kind": "ability",
+            "ability_slot": 1,
+            "required_level": null
+          },
+          {
+            "id": "262008204",
+            "board_id": 1,
+            "index": 4,
+            "parent_id": "262008203",
+            "kind": "ability",
+            "required_items": {
+              "9": 6
+            },
+            "required_mana": 160,
+            "effect_kind": "ability",
+            "ability_slot": 1,
+            "required_level": null
+          },
+          {
+            "id": "262008205",
+            "board_id": 1,
+            "index": 5,
+            "parent_id": "262008204",
+            "kind": "ability",
+            "required_items": {
+              "9": 12
+            },
+            "required_mana": 240,
+            "effect_kind": "ability",
+            "ability_slot": 1,
+            "required_level": null
+          },
+          {
+            "id": "262008206",
+            "board_id": 1,
+            "index": 6,
+            "parent_id": "262008205",
+            "kind": "ability",
+            "required_items": {
+              "9": 5,
+              "10": 3
+            },
+            "required_mana": 340,
+            "effect_kind": "ability",
+            "ability_slot": 1,
+            "required_level": null
+          },
+          {
+            "id": "262008207",
+            "board_id": 1,
+            "index": 7,
+            "parent_id": "262008205",
+            "kind": "ability",
+            "required_items": {
+              "9": 5,
+              "10": 3
+            },
+            "required_mana": 340,
+            "effect_kind": "ability",
+            "ability_slot": 2,
+            "required_level": 10
+          },
+          {
+            "id": "262008208",
+            "board_id": 1,
+            "index": 8,
+            "parent_id": "262008207",
+            "kind": "ability",
+            "required_items": {
+              "9": 8,
+              "10": 3
+            },
+            "required_mana": 400,
+            "effect_kind": "ability",
+            "ability_slot": 2,
+            "required_level": 10
+          },
+          {
+            "id": "262008209",
+            "board_id": 1,
+            "index": 9,
+            "parent_id": "262008208",
+            "kind": "ability",
+            "required_items": {
+              "9": 8,
+              "10": 3
+            },
+            "required_mana": 400,
+            "effect_kind": "ability",
+            "ability_slot": 2,
+            "required_level": 10
+          },
+          {
+            "id": "262008210",
+            "board_id": 1,
+            "index": 10,
+            "parent_id": "262008209",
+            "kind": "ability",
+            "required_items": {
+              "9": 10,
+              "10": 5
+            },
+            "required_mana": 640,
+            "effect_kind": "ability",
+            "ability_slot": 2,
+            "required_level": 10
+          },
+          {
+            "id": "262008213",
+            "board_id": 1,
+            "index": 13,
+            "parent_id": "262008210",
+            "kind": "ability",
+            "required_items": {
+              "9": 18,
+              "10": 10,
+              "11": 6,
+              "12": 1
+            },
+            "required_mana": 3160,
+            "effect_kind": "ability",
+            "ability_slot": 3,
+            "required_level": 40
+          },
+          {
+            "id": "262008214",
+            "board_id": 1,
+            "index": 14,
+            "parent_id": "262008213",
+            "kind": "ability",
+            "required_items": {
+              "10": 12,
+              "11": 8,
+              "12": 3,
+              "99": 1
+            },
+            "required_mana": 7120,
+            "effect_kind": "ability",
+            "ability_slot": 3,
+            "required_level": 40
+          },
+          {
+            "id": "262008215",
+            "board_id": 1,
+            "index": 15,
+            "parent_id": "262008214",
+            "kind": "ability",
+            "required_items": {
+              "10": 12,
+              "11": 8,
+              "12": 3,
+              "99": 1
+            },
+            "required_mana": 7120,
+            "effect_kind": "ability",
+            "ability_slot": 3,
+            "required_level": 40
+          },
+          {
+            "id": "262008217",
+            "board_id": 1,
+            "index": 17,
+            "parent_id": "262008215",
+            "kind": "ability",
+            "required_items": {
+              "10": 16,
+              "11": 12,
+              "12": 5,
+              "99": 8
+            },
+            "required_mana": 18000,
+            "effect_kind": "ability",
+            "ability_slot": 3,
+            "required_level": 40
+          },
+          {
+            "id": "262008218",
+            "board_id": 1,
+            "index": 18,
+            "parent_id": "262008217",
+            "kind": "ability",
+            "required_items": {
+              "10": 16,
+              "11": 12,
+              "12": 5,
+              "99": 8
+            },
+            "required_mana": 18000,
+            "effect_kind": "ability",
+            "ability_slot": 3,
+            "required_level": 40
+          },
+          {
+            "id": "262008216",
+            "board_id": 1,
+            "index": 16,
+            "parent_id": "262008215",
+            "kind": "ability",
+            "required_items": {
+              "10": 14,
+              "11": 10,
+              "12": 3,
+              "99": 3
+            },
+            "required_mana": 13280,
+            "effect_kind": "ability",
+            "ability_slot": 3,
+            "required_level": 40
+          },
+          {
+            "id": "262008219",
+            "board_id": 1,
+            "index": 19,
+            "parent_id": "262008210",
+            "kind": "ability",
+            "required_items": {
+              "9": 8,
+              "10": 6,
+              "11": 3
+            },
+            "required_mana": 1280,
+            "effect_kind": "action_skill_evolution",
+            "ability_slot": 0,
+            "required_level": 25
+          },
+          {
+            "id": "262008220",
+            "board_id": 1,
+            "index": 20,
+            "parent_id": "262008219",
+            "kind": "ability",
+            "required_items": {
+              "9": 35,
+              "10": 10,
+              "11": 5
+            },
+            "required_mana": 2120,
+            "effect_kind": "action_skill_level",
+            "ability_slot": 0,
+            "required_level": 25
+          },
+          {
+            "id": "262008222",
+            "board_id": 1,
+            "index": 22,
+            "parent_id": "262008220",
+            "kind": "ability",
+            "required_items": {
+              "10": 14,
+              "11": 10,
+              "12": 5,
+              "99": 5
+            },
+            "required_mana": 16400,
+            "effect_kind": "action_skill_level",
+            "ability_slot": 0,
+            "required_level": 25
+          },
+          {
+            "id": "262008223",
+            "board_id": 1,
+            "index": 23,
+            "parent_id": "262008222",
+            "kind": "ability",
+            "required_items": {
+              "10": 14,
+              "11": 10,
+              "12": 5,
+              "99": 5
+            },
+            "required_mana": 16800,
+            "effect_kind": "action_skill_level",
+            "ability_slot": 0,
+            "required_level": 25
+          },
+          {
+            "id": "262008221",
+            "board_id": 1,
+            "index": 21,
+            "parent_id": "262008220",
+            "kind": "ability",
+            "required_items": {
+              "9": 60,
+              "10": 18,
+              "11": 12
+            },
+            "required_mana": 4380,
+            "effect_kind": "action_skill_level",
+            "ability_slot": 0,
+            "required_level": 25
+          },
+          {
+            "id": "262008211",
+            "board_id": 1,
+            "index": 11,
+            "parent_id": "262008208",
+            "kind": "ability",
+            "required_items": {
+              "9": 14,
+              "10": 12
+            },
+            "required_mana": 1320,
+            "effect_kind": "ability",
+            "ability_slot": 2,
+            "required_level": 10
+          },
+          {
+            "id": "262008212",
+            "board_id": 1,
+            "index": 12,
+            "parent_id": "262008211",
+            "kind": "ability",
+            "required_items": {
+              "9": 10,
+              "10": 8,
+              "11": 3
+            },
+            "required_mana": 1480,
+            "effect_kind": "ability",
+            "ability_slot": 2,
+            "required_level": 10
+          }
+        ],
+        "2": [
+          {
+            "id": "262008401",
+            "board_id": 2,
+            "index": 1,
+            "parent_id": null,
+            "kind": "ability",
+            "required_items": {
+              "11": 10,
+              "12": 8,
+              "99": 3,
+              "56": 10
+            },
+            "required_mana": 4500,
+            "effect_kind": "ability",
+            "ability_slot": 4,
+            "required_level": 90
+          },
+          {
+            "id": "262008402",
+            "board_id": 2,
+            "index": 2,
+            "parent_id": "262008401",
+            "kind": "ability",
+            "required_items": {
+              "11": 12,
+              "12": 10,
+              "99": 3,
+              "56": 12
+            },
+            "required_mana": 5050,
+            "effect_kind": "ability",
+            "ability_slot": 4,
+            "required_level": 90
+          },
+          {
+            "id": "262008403",
+            "board_id": 2,
+            "index": 3,
+            "parent_id": "262008402",
+            "kind": "ability",
+            "required_items": {
+              "11": 18,
+              "12": 12,
+              "99": 5,
+              "56": 12,
+              "57": 2
+            },
+            "required_mana": 5600,
+            "effect_kind": "ability",
+            "ability_slot": 4,
+            "required_level": 90
+          },
+          {
+            "id": "262008404",
+            "board_id": 2,
+            "index": 4,
+            "parent_id": "262008403",
+            "kind": "ability",
+            "required_items": {
+              "12": 14,
+              "99": 5,
+              "56": 14,
+              "57": 4,
+              "58": 1
+            },
+            "required_mana": 6240,
+            "effect_kind": "ability",
+            "ability_slot": 4,
+            "required_level": 90
+          },
+          {
+            "id": "262008405",
+            "board_id": 2,
+            "index": 5,
+            "parent_id": "262008404",
+            "kind": "ability",
+            "required_items": {
+              "12": 16,
+              "99": 8,
+              "56": 16,
+              "57": 6,
+              "58": 2
+            },
+            "required_mana": 8360,
+            "effect_kind": "ability",
+            "ability_slot": 4,
+            "required_level": 90
+          },
+          {
+            "id": "262008406",
+            "board_id": 2,
+            "index": 6,
+            "parent_id": "262008405",
+            "kind": "ability",
+            "required_items": {
+              "12": 20,
+              "99": 8,
+              "56": 20,
+              "57": 10,
+              "58": 4
+            },
+            "required_mana": 10200,
+            "effect_kind": "ability",
+            "ability_slot": 4,
+            "required_level": 90
+          },
+          {
+            "id": "262008407",
+            "board_id": 2,
+            "index": 7,
+            "parent_id": "262008401",
+            "kind": "ability",
+            "required_items": {
+              "11": 16,
+              "12": 8,
+              "99": 3,
+              "56": 12,
+              "57": 4
+            },
+            "required_mana": 5100,
+            "effect_kind": "ability",
+            "ability_slot": 5,
+            "required_level": 95
+          },
+          {
+            "id": "262008413",
+            "board_id": 2,
+            "index": 13,
+            "parent_id": "262008407",
+            "kind": "ability",
+            "required_items": {
+              "12": 10,
+              "99": 5,
+              "56": 14,
+              "57": 6,
+              "58": 2
+            },
+            "required_mana": 7300,
+            "effect_kind": "ability",
+            "ability_slot": 6,
+            "required_level": 100
+          },
+          {
+            "id": "262008414",
+            "board_id": 2,
+            "index": 14,
+            "parent_id": "262008413",
+            "kind": "ability",
+            "required_items": {
+              "12": 12,
+              "99": 5,
+              "56": 18,
+              "57": 8,
+              "58": 4
+            },
+            "required_mana": 9980,
+            "effect_kind": "ability",
+            "ability_slot": 6,
+            "required_level": 100
+          },
+          {
+            "id": "262008415",
+            "board_id": 2,
+            "index": 15,
+            "parent_id": "262008414",
+            "kind": "ability",
+            "required_items": {
+              "12": 14,
+              "99": 8,
+              "56": 18,
+              "57": 10,
+              "58": 6
+            },
+            "required_mana": 12250,
+            "effect_kind": "ability",
+            "ability_slot": 6,
+            "required_level": 100
+          },
+          {
+            "id": "262008416",
+            "board_id": 2,
+            "index": 16,
+            "parent_id": "262008415",
+            "kind": "ability",
+            "required_items": {
+              "12": 16,
+              "99": 8,
+              "56": 20,
+              "57": 12,
+              "58": 8
+            },
+            "required_mana": 14600,
+            "effect_kind": "ability",
+            "ability_slot": 6,
+            "required_level": 100
+          },
+          {
+            "id": "262008417",
+            "board_id": 2,
+            "index": 17,
+            "parent_id": "262008416",
+            "kind": "ability",
+            "required_items": {
+              "12": 18,
+              "99": 10,
+              "56": 24,
+              "57": 16,
+              "58": 10
+            },
+            "required_mana": 18300,
+            "effect_kind": "ability",
+            "ability_slot": 6,
+            "required_level": 100
+          },
+          {
+            "id": "262008418",
+            "board_id": 2,
+            "index": 18,
+            "parent_id": "262008417",
+            "kind": "ability",
+            "required_items": {
+              "12": 22,
+              "99": 10,
+              "56": 28,
+              "57": 20,
+              "58": 15
+            },
+            "required_mana": 22400,
+            "effect_kind": "ability",
+            "ability_slot": 6,
+            "required_level": 100
+          },
+          {
+            "id": "262008408",
+            "board_id": 2,
+            "index": 8,
+            "parent_id": "262008407",
+            "kind": "ability",
+            "required_items": {
+              "11": 20,
+              "12": 10,
+              "99": 5,
+              "56": 12,
+              "57": 5
+            },
+            "required_mana": 5900,
+            "effect_kind": "ability",
+            "ability_slot": 5,
+            "required_level": 95
+          },
+          {
+            "id": "262008409",
+            "board_id": 2,
+            "index": 9,
+            "parent_id": "262008408",
+            "kind": "ability",
+            "required_items": {
+              "12": 12,
+              "99": 5,
+              "56": 14,
+              "57": 6,
+              "58": 2
+            },
+            "required_mana": 7420,
+            "effect_kind": "ability",
+            "ability_slot": 5,
+            "required_level": 95
+          },
+          {
+            "id": "262008410",
+            "board_id": 2,
+            "index": 10,
+            "parent_id": "262008409",
+            "kind": "ability",
+            "required_items": {
+              "12": 14,
+              "99": 8,
+              "56": 16,
+              "57": 8,
+              "58": 4
+            },
+            "required_mana": 10000,
+            "effect_kind": "ability",
+            "ability_slot": 5,
+            "required_level": 95
+          },
+          {
+            "id": "262008411",
+            "board_id": 2,
+            "index": 11,
+            "parent_id": "262008410",
+            "kind": "ability",
+            "required_items": {
+              "12": 16,
+              "99": 8,
+              "56": 20,
+              "57": 10,
+              "58": 6
+            },
+            "required_mana": 12700,
+            "effect_kind": "ability",
+            "ability_slot": 5,
+            "required_level": 95
+          },
+          {
+            "id": "262008412",
+            "board_id": 2,
+            "index": 12,
+            "parent_id": "262008411",
+            "kind": "ability",
+            "required_items": {
+              "12": 18,
+              "99": 10,
+              "56": 24,
+              "57": 15,
+              "58": 10
+            },
+            "required_mana": 14100,
+            "effect_kind": "ability",
+            "ability_slot": 5,
+            "required_level": 95
+          }
+        ]
+      }
+    }
+  },
+  "equipments": {
+    "1010001": {
+      "id": "1010001",
+      "asset_id": "sword_0001",
+      "name": "老旧短剑",
+      "kind": "weapon",
+      "max_level": 5,
+      "ability_soul_id": "1010001",
+      "rarity": 1,
+      "status_curve": {
+        "1": {
+          "hp": 47,
+          "atk": 18
+        },
+        "5": {
+          "hp": 70,
+          "atk": 26
+        }
+      },
+      "ability_soul": [
+        {
+          "row_index": 0,
+          "trigger_kind": "During",
+          "content_code": 9,
+          "content_kind": "ResistanceWhite",
+          "target_code": 0,
+          "power1_raw": 17500.0,
+          "power1": 0.175
+        }
+      ]
+    },
+    "100001": {
+      "id": "100001",
+      "asset_id": "main_chapter_orb_1",
+      "name": "精灵的微笑",
+      "kind": "orb",
+      "max_level": 1,
+      "ability_soul_id": "100001",
+      "rarity": 5,
+      "status_curve": {
+        "1": {
+          "hp": 240,
+          "atk": 32
+        }
+      },
+      "ability_soul": [
+        {
+          "row_index": 0,
+          "trigger_kind": "Instant",
+          "content_code": 205,
+          "content_kind": "FixedHeal",
+          "target_code": 5,
+          "power1_raw": 10000.0,
+          "power1": 0.1
+        }
+      ]
+    }
+  },
+  "battle_source_defaults": {
+    "default_party": [
+      "141005",
+      "121002",
+      "131004"
+    ],
+    "player_role_kind": 1,
+    "player_rank": 1,
+    "degree_id": 1,
+    "allow_heal_from_other_players": true,
+    "battle_behavior_data": {
+      "skill_ability_behavior_mode": 1,
+      "dash_behavior_mode": 1
+    },
+    "direct_attack_reference_atk": 30,
+    "skill_point_gain_per_direct_attack": 50,
+    "skill_point_gain_status": "deterministic adapter pending exact member skill-point gain event recovery",
+    "power_flip_combo_thresholds": [
+      9,
+      15,
+      39
+    ],
+    "default_ability_levels": {
+      "141005": {
+        "1410051": 1,
+        "1410052": 1,
+        "1410053": 1
+      },
+      "121002": {
+        "1210021": 1,
+        "1210022": 1,
+        "1210023": 1
+      },
+      "131004": {
+        "1310041": 1,
+        "1310042": 1,
+        "1310043": 1
+      }
+    }
+  },
+  "action_assets": [
+    {
+      "id": "battle/action/enemy/action/general_boss/boss_spirit$difficulity10_funnel_shot1_single",
+      "commands": [
+        "SpawnFunnel"
+      ],
+      "runtime": [
+        {
+          "kind": "spawn_funnel",
+          "enemy_kind": "zako",
+          "enemy_id": "spirit",
+          "level": 3,
+          "group_id": 1
+        }
+      ],
+      "sha256": "8f6ad07e7ab52bae679f7c4a23f2182f20a3a7aef977daa5cc38fafae51bf94b"
+    },
+    {
+      "id": "battle/action/enemy/action/general_boss/boss_spirit$difficulity10_shot1",
+      "commands": [
+        "CreateHitArea",
+        "CreateNormalAttack",
+        "MoveHitArea",
+        "ShowEffect"
+      ],
+      "runtime": [
+        {
+          "kind": "projectile",
+          "hit_area_name": "ENEMY_SHOT_FINE",
+          "radius": 12.0,
+          "angle_offset_radians": 0.0,
+          "distribution": {
+            "kind": "n_way",
+            "count": 3,
+            "spread_radians": 0.5235987755982988
+          },
+          "lifetime_frames": 1200,
+          "min_hit_interval_frames": 40,
+          "speed_per_frame": 13.0,
+          "attack_multiplier": 0.9,
+          "effect_path": "battle/effect/enemy_general/enemy_shot_fine"
+        },
+        {
+          "kind": "projectile",
+          "hit_area_name": "ENEMY_SHOT_FINE",
+          "radius": 12.0,
+          "angle_offset_radians": 0.0,
+          "distribution": {
+            "kind": "n_way",
+            "count": 4,
+            "spread_radians": 0.5235987755982988
+          },
+          "lifetime_frames": 1200,
+          "min_hit_interval_frames": 40,
+          "speed_per_frame": 9.0,
+          "attack_multiplier": 0.9,
+          "effect_path": "battle/effect/enemy_general/enemy_shot_fine"
+        }
+      ],
+      "sha256": "342f91fc13ee3e8363be26135efc87e62c2e6e85f8b03ea93fa02c36a33e9d00"
+    },
+    {
+      "id": "battle/action/enemy/action/general_boss/boss_spirit$difficulity10_skill_shot1",
+      "commands": [
+        "CreateHitArea",
+        "CreateNormalAttack",
+        "MoveHitArea",
+        "ShowEffect"
+      ],
+      "runtime": [
+        {
+          "kind": "projectile",
+          "hit_area_name": "ENEMY_SHOT_MIDDLE_CANNON",
+          "radius": 40.0,
+          "angle_offset_radians": 0.0,
+          "distribution": {
+            "kind": "n_way",
+            "count": 3,
+            "spread_radians": 0.2617993877991494
+          },
+          "lifetime_frames": 1200,
+          "min_hit_interval_frames": 40,
+          "speed_per_frame": 18.0,
+          "attack_multiplier": 2.75,
+          "effect_path": "battle/effect/enemy_general/enemy_shot_middle_cannon"
+        },
+        {
+          "kind": "projectile",
+          "hit_area_name": "ENEMY_SHOT_MIDDLE_CANNON",
+          "radius": 40.0,
+          "angle_offset_radians": 0.0,
+          "distribution": {
+            "kind": "n_way",
+            "count": 6,
+            "spread_radians": 0.3490658503988659
+          },
+          "lifetime_frames": 1200,
+          "min_hit_interval_frames": 40,
+          "speed_per_frame": 14.0,
+          "attack_multiplier": 2.75,
+          "effect_path": "battle/effect/enemy_general/enemy_shot_middle_cannon"
+        },
+        {
+          "kind": "projectile",
+          "hit_area_name": "ENEMY_SHOT_MIDDLE_CANNON",
+          "radius": 40.0,
+          "angle_offset_radians": 0.0,
+          "distribution": {
+            "kind": "n_way",
+            "count": 8,
+            "spread_radians": 0.4363323129985824
+          },
+          "lifetime_frames": 1200,
+          "min_hit_interval_frames": 40,
+          "speed_per_frame": 10.0,
+          "attack_multiplier": 2.75,
+          "effect_path": "battle/effect/enemy_general/enemy_shot_middle_cannon"
+        }
+      ],
+      "sha256": "c5c91c26bc0e46c3996538cf45d84a6cad7972218e66651d07f7e511af0f873b"
+    },
+    {
+      "id": "battle/action/enemy/action/zako/zako_slango$difficulity10_shot1",
+      "commands": [
+        "CreateHitArea",
+        "CreateNormalAttack",
+        "MoveHitArea",
+        "ShowEffect"
+      ],
+      "runtime": [
+        {
+          "kind": "projectile",
+          "hit_area_name": "ENEMY_SHOT_FINE",
+          "radius": 12.0,
+          "angle_offset_radians": 3.141592653589793,
+          "distribution": {
+            "kind": "single",
+            "count": 1,
+            "spread_radians": 0.0
+          },
+          "lifetime_frames": 600,
+          "min_hit_interval_frames": 40,
+          "speed_per_frame": 10.0,
+          "attack_multiplier": 0.9,
+          "effect_path": "battle/effect/enemy_general/enemy_shot_fine"
+        }
+      ],
+      "sha256": "6f1439a30b49220a5dc4c6817d25ad920879ed1fbeeae8d492e33772c3799489"
+    },
+    {
+      "id": "battle/action/enemy/action/zako/zako_spirit$difficulity10_shot1_dark",
+      "commands": [
+        "CreateHitArea",
+        "CreateNormalAttack",
+        "MoveHitArea",
+        "ShowEffect"
+      ],
+      "runtime": [
+        {
+          "kind": "projectile",
+          "hit_area_name": "ENEMY_SHOT_FINE",
+          "radius": 12.0,
+          "angle_offset_radians": 3.141592653589793,
+          "distribution": {
+            "kind": "n_way",
+            "count": 3,
+            "spread_radians": 1.0471975511965976
+          },
+          "lifetime_frames": 600,
+          "min_hit_interval_frames": 40,
+          "speed_per_frame": 10.0,
+          "attack_multiplier": 0.9,
+          "effect_path": "battle/effect/enemy_general/enemy_shot_fine"
+        }
+      ],
+      "sha256": "818792ffbef7dd6ce20fecc22a68f0b60333be9403aa912f268ceeffadee8d25"
+    }
+  ],
+  "arena": {
+    "width": 720,
+    "height": 1280,
+    "gravity_y": 980.0,
+    "floor_y": 1180.0,
+    "collision_status": "fallback walls pending recovery of the verified terrain AMF3 binary"
+  },
+  "terrain_runtime": {
+    "status": "fallback",
+    "source": "hand-authored adapter pending recovery of the verified terrain AMF3 binary",
+    "segments": [
+      {
+        "id": "lower-left-slope",
+        "start": [
+          80.0,
+          1040.0
+        ],
+        "end": [
+          250.0,
+          1120.0
+        ],
+        "restitution": 0.9
+      },
+      {
+        "id": "lower-right-slope",
+        "start": [
+          470.0,
+          1120.0
+        ],
+        "end": [
+          640.0,
+          1040.0
+        ],
+        "restitution": 0.9
+      }
+    ],
+    "markers": {
+      "p1": [
+        220.0,
+        300.0
+      ],
+      "p2": [
+        500.0,
+        300.0
+      ],
+      "p3": [
+        360.0,
+        220.0
+      ]
+    }
+  },
+  "enemy": {
+    "id": "slango",
+    "source_enemy_key": "slango_zako",
+    "kind": "zako",
+    "level": 12,
+    "max_hp": 148,
+    "radius": 36.0,
+    "position": [
+      360.0,
+      280.0
+    ],
+    "placement_status": "representative first-zone spawn pending terrain object coordinates"
+  },
+  "source": {
+    "client_version": "CN APK 1.8.1; CN resource 1.4.54",
+    "cn_master_repository": "https://github.com/blead/wf-assets-cn",
+    "cn_master_revision": "0f6b645bb27f9e544982648066f0c8f5e0184132",
+    "battle_fixture_status": "canonical CN quest/field/zone/enemy/action graph; terrain collision geometry remains unavailable",
+    "files": [
+      {
+        "role": "service_emulator",
+        "path": "assets/main_quest.json",
+        "sha256": "3817699bb4272781de9e0ebd474509fd0f8b635870e6bc0a879a9988870de090"
+      },
+      {
+        "role": "service_emulator",
+        "path": "assets/quest_lookup.json",
+        "sha256": "57ba5f217a1755080872ee225d4e219aba60a3463ebb60b72b9d25bc32950566"
+      },
+      {
+        "role": "service_emulator",
+        "path": "assets/quest_entry_costs.json",
+        "sha256": "5a1e1300dd77b27c12deaaadbbadee98f5997895f490281fdbb112d59e28e101"
+      },
+      {
+        "role": "cn_master_version",
+        "path": "VERSION",
+        "sha256": "3c6b1c3795d428122e47d353cd6f6dbf606d1ec9a9164e0e628c13fe8405df0a"
+      },
+      {
+        "role": "cn_master_main_quest",
+        "path": "orderedmap/quest/main_quest.json",
+        "sha256": "d5f1dfe6d5c5ccfdec44de764242f0425e5f17a148cb9ac4c82042ea9bfece71"
+      },
+      {
+        "role": "cn_master_field_data",
+        "path": "orderedmap/battle/field_data.json",
+        "sha256": "a81dfbf45d4dd07ef8a6f54681a155c31b70548988f1aca4e19b52b5ae602b21"
+      },
+      {
+        "role": "cn_master_field",
+        "path": "orderedmap/battle/field.json",
+        "sha256": "19109800502a9856a6c29ae815a0b34eeaf475c96481222b5fdec89f758a5587"
+      },
+      {
+        "role": "cn_master_zone",
+        "path": "orderedmap/battle/zone.json",
+        "sha256": "e46d0da5bea2617bc5deef07efd8cf7cc213f4a611df557443c581f9b57b9ea8"
+      },
+      {
+        "role": "cn_master_zone_action",
+        "path": "orderedmap/battle/zone_action.json",
+        "sha256": "36d6c1ec7221df3554f00b2dee9134f2605c93e59335a16445a60bddaac94a70"
+      },
+      {
+        "role": "cn_master_general_zako",
+        "path": "orderedmap/battle/zako/general_zako.json",
+        "sha256": "411d467b8987bc3a4c616d0e595e69127842d7fb5de48ecd23450df9ac4f8b55"
+      },
+      {
+        "role": "cn_master_zako_level",
+        "path": "orderedmap/battle/zako/zako_level.json",
+        "sha256": "87df65da1be204e35ea094057bfe5a32ea2474c6a8abaab6be93905ee505ce66"
+      },
+      {
+        "role": "cn_master_general_boss",
+        "path": "orderedmap/battle/boss/general_boss.json",
+        "sha256": "a7d61c17ef530128509f2bdb3d6391c56483cc43ad74f27a80d01dabf4dd4ac1"
+      },
+      {
+        "role": "cn_master_boss_level",
+        "path": "orderedmap/battle/boss/boss_level.json",
+        "sha256": "028a16f27f0ba3d5870dbbc9179202f0360ef410f33331d6e7378d5bfdf244a4"
+      },
+      {
+        "role": "cn_master_general_boss_state",
+        "path": "orderedmap/battle/boss/general_boss_state.json",
+        "sha256": "90e33ae0713090076010a7bbc2b1474691edc0419187065b09990b3d577cbabc"
+      },
+      {
+        "role": "cn_master_character",
+        "path": "orderedmap/character/character.json",
+        "sha256": "45bd1cf9b2092f80c46509124cd27115b3cbaf7ceba9baa1e0fd7acede4da5ad"
+      },
+      {
+        "role": "cn_master_character_status",
+        "path": "orderedmap/character/character_status.json",
+        "sha256": "28e366b2c58f305b7eca3d194bf5aeff59084b034fd15ab16b2fb41131f22091"
+      },
+      {
+        "role": "cn_master_character_level",
+        "path": "orderedmap/character/character_level.json",
+        "sha256": "41b3e01150cb2846851384cb02439042a1f0808773e3cdb77c49f8fa3a9fe848"
+      },
+      {
+        "role": "cn_master_evolution_status",
+        "path": "orderedmap/character/evolution_status.json",
+        "sha256": "050dcec557d954dc7b6223a1a9f2dbc9940b764990d01f0a0ecaa94bb031c071"
+      },
+      {
+        "role": "cn_master_character_text",
+        "path": "orderedmap/character/character_text.json",
+        "sha256": "1041dd7656d4175efcd98aba768ec26f508428fc7b607111f6bbff7e92127eb3"
+      },
+      {
+        "role": "cn_master_action_skill",
+        "path": "orderedmap/skill/action_skill.json",
+        "sha256": "68e48273619fbccade362fa3a1dffb73e1a5ee5ee97ceebb4e4bba422756056e"
+      },
+      {
+        "role": "cn_master_ability",
+        "path": "orderedmap/ability/ability.json",
+        "sha256": "9134646bf5058db650ba4491820709878ccabe5ae692b6c731c8bb702bcbcd33"
+      },
+      {
+        "role": "cn_master_equipment",
+        "path": "orderedmap/item/equipment.json",
+        "sha256": "1d5fb7a8c4ef428750a4fee22ad5f70a71bdbb21e66ce7df67aee6bbf470b7c4"
+      },
+      {
+        "role": "cn_master_equipment_status",
+        "path": "orderedmap/item/equipment_status.json",
+        "sha256": "f8ebd755a1615885750839248ddaa23356a7c686ac36aaa21e555d6d8105569f"
+      },
+      {
+        "role": "cn_master_ability_soul",
+        "path": "orderedmap/ability/ability_soul.json",
+        "sha256": "a0c249976fb7b5e0860dbeb6bab48b4a84ed7709cdc11052f2fb63574dc9edf2"
+      },
+      {
+        "role": "cn_master_mana_board",
+        "path": "orderedmap/generated/mana_board.json",
+        "sha256": "08d34f9bf1f0ecffc74cba404f7737e4290172bc2ba57c64a33d96f5d956221d"
+      },
+      {
+        "role": "cn_master_mana_node",
+        "path": "orderedmap/mana_board/mana_node.json",
+        "sha256": "af3b20712847cf741ec5479f7c37b364176b53255d55d04b88c46a04ee721acc"
+      },
+      {
+        "role": "cn_master_level_required_mana_node",
+        "path": "orderedmap/mana_board/level_required_mana_node.json",
+        "sha256": "46dd139f79a1df91e0f7cdd7e6c08b80f59108581aea90201f68cf91f6731713"
+      },
+      {
+        "role": "cn_master_general_boss_variable",
+        "path": "orderedmap/battle/boss/general_boss_variable.json",
+        "sha256": "2c0f23e6cbc694dd56efab3a669fe9551cd4df88e6942b1d088ee30b488af47f"
+      },
+      {
+        "role": "cn_action_dsl",
+        "path": "assets/battle/action/enemy/action/general_boss/boss_spirit$difficulity10_funnel_shot1_single.action.dsl.json",
+        "sha256": "8f6ad07e7ab52bae679f7c4a23f2182f20a3a7aef977daa5cc38fafae51bf94b"
+      },
+      {
+        "role": "cn_action_dsl",
+        "path": "assets/battle/action/enemy/action/general_boss/boss_spirit$difficulity10_shot1.action.dsl.json",
+        "sha256": "342f91fc13ee3e8363be26135efc87e62c2e6e85f8b03ea93fa02c36a33e9d00"
+      },
+      {
+        "role": "cn_action_dsl",
+        "path": "assets/battle/action/enemy/action/general_boss/boss_spirit$difficulity10_skill_shot1.action.dsl.json",
+        "sha256": "c5c91c26bc0e46c3996538cf45d84a6cad7972218e66651d07f7e511af0f873b"
+      },
+      {
+        "role": "cn_action_dsl",
+        "path": "assets/battle/action/enemy/action/zako/zako_slango$difficulity10_shot1.action.dsl.json",
+        "sha256": "6f1439a30b49220a5dc4c6817d25ad920879ed1fbeeae8d492e33772c3799489"
+      },
+      {
+        "role": "cn_action_dsl",
+        "path": "assets/battle/action/enemy/action/zako/zako_spirit$difficulity10_shot1_dark.action.dsl.json",
+        "sha256": "818792ffbef7dd6ce20fecc22a68f0b60333be9403aa912f268ceeffadee8d25"
+      },
+      {
+        "role": "cn_player_skill_dsl",
+        "path": "assets/battle/action/skill/action/rare5/bigwing_shaman$bigwing_shaman_1.action.dsl.json",
+        "sha256": "4e3d109bf04af056542ccc51552fbcd9728a6ed6d37d5b323186e3fb854ddb41"
+      },
+      {
+        "role": "cn_player_skill_dsl",
+        "path": "assets/battle/action/skill/action/rare5/onmyoji_boy$onmyoji_boy_1.action.dsl.json",
+        "sha256": "6527ba5ced39db2cca5fe4b563aeb24c305bf0480a0653dae31ce97433560606"
+      },
+      {
+        "role": "cn_player_skill_dsl",
+        "path": "assets/battle/action/skill/action/rare5/thunder_archer$thunder_archer_1.action.dsl.json",
+        "sha256": "916fa6938986440e80f36cae1f431c7225a0388a96bc65e0ef736538aeab52b6"
+      },
+      {
+        "role": "client_apk",
+        "path": "client-v1.8.1.apk",
+        "sha256": "1adba913eb662bc21d5623b797c82c1df82ffe4120920384949e730335b3540e"
+      }
+    ]
+  }
+}

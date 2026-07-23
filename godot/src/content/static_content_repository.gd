@@ -316,6 +316,8 @@ func _validate_quest(quest: Dictionary) -> Error:
             elif runtime_kind == "spawn_funnel":
                 if str(runtime.get("enemy_id", "")).is_empty() or int(runtime.get("level", 0)) <= 0:
                     return ERR_INVALID_DATA
+                if not _has_enemy_definition(enemies, str(runtime["enemy_id"]), "funnel"):
+                    return ERR_INVALID_DATA
             else:
                 return ERR_INVALID_DATA
         action_ids[action_id] = true

@@ -11,7 +11,7 @@ OfflineCatalogRepository.load_catalog(path: String) -> Error
 OfflineGameService.settle_stamina(profile, now_unix, cap, interval_seconds) -> int
 OfflineGameService.spend_stamina(profile, cost, now_unix) -> bool
 OfflineGameService.save_party(profile, members) -> bool
-OfflineGameService.get_next_main_quest(quests, progress) -> Dictionary
+OfflineGameService.get_next_main_quest(chapters, stage_nodes, quests, progress, roster, now_unix) -> Dictionary
 OfflineGameService.complete_story(profile, quest, operation_id) -> Dictionary
 OfflineGameService.draw_gacha(profile, gacha, count, operation_id) -> Dictionary
 OfflineGameService.add_inbox_reward(profile, grant_id, subject, rewards) -> bool
@@ -27,13 +27,13 @@ python3 godot/tools/convert_offline_catalogs.py
 
 ## 3. Contracts
 
-- Catalog schema 1 contains exactly 419 CN main quests, 505 characters, 436 equipments, 584 CN gacha banners, and 581 available projected reward pools. It records SHA-256 for both CN master metadata and the explicitly identified server projection.
+- Catalog schema 2 contains exactly 12 CN main chapters, 139 stage nodes, 419 main quests, 505 characters, 436 equipments, 584 CN gacha banners, and 581 available projected reward pools. Chapter/stage-node records retain the original multiplied IDs and predecessor graph; quest records retain viewability prerequisites, release timestamps, and required-character conditions. It records SHA-256 for every consumed CN master file and the explicitly identified server projection.
 - Profile schema 6 adds `rank_points`, `stamina_state`, `gacha_state`, `operation_ledger`, and `inbox`.
 - `stamina_state` owns `stored_value` and `heal_anchor_unix`; elapsed recovery is settled before spending.
 - `gacha_state.rng_state` is persisted. A draw advances it, deducts currency, grants results, and writes `operation_ledger[operation_id]` as one staged mutation.
 - Every draw result owns `id`, `rank`, `movie_id`, `seed`, and an independently sampled `play_movie`. Movie selection never changes reward rank or item selection.
 - Party members are owned, unique, ordered, non-zero, and limited to three.
-- Main progression follows CN chapter/stage/order and prerequisite IDs. Story completion is an idempotent local operation using the CN summary; an unavailable battle graph must stop progression explicitly while leaving converted battles replayable.
+- Main progression follows the CN client order: latest released chapter, latest viewable uncleared stage node in reverse order, then the first viewable uncleared quest in that node. Story completion is an idempotent local operation using the CN summary; an unavailable battle graph must stop progression explicitly while leaving converted battles replayable.
 - Battle start deducts stamina and persists `active_run` in the same staged save.
 - Inbox grant IDs are unique. Claim validates all currency caps before mutating any balance and is idempotent by operation ID.
 - Presentation actions mutate a cloned `ProfileData`, save it, and only then call `live_profile.replace_from(staged)`.
@@ -59,7 +59,7 @@ python3 godot/tools/convert_offline_catalogs.py
 
 ## 6. Tests Required
 
-- Catalog conversion runs twice byte-identically and enforces `419/505/436/584/581`.
+- Catalog conversion runs twice byte-identically and enforces `12/139/419/505/436/584/581` for schema 2.
 - Schema v0 migrates through v6 and round-trips all new dictionaries.
 - Stamina settlement/spend and battle-start atomic deduction.
 - Party ownership, uniqueness, and order.

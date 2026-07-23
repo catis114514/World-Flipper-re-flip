@@ -39,9 +39,26 @@ func run(t) -> void:
     t.assert_equal(profile.currencies["free_mana"], before_mana + 100, "inbox reward is granted once")
     t.assert_equal(service.claim_inbox_reward(profile, "launch-gift", "claim-1"), claimed, "inbox operation is idempotent")
     t.assert_equal(profile.currencies["free_mana"], before_mana + 100, "inbox replay does not duplicate rewards")
-    var next := service.get_next_main_quest(catalog.quests, profile.quest_progress)
+    var next := _next(service, catalog, profile)
     t.assert_equal(next["id"], "1001001", "progression starts at the first CN story")
+    t.assert_equal(next["resolved_chapter"]["name"], "第1章精灵的乐园", "resolved quest carries original chapter metadata")
+    t.assert_equal(next["resolved_stage_node"]["id"], 1001, "resolved quest carries the original multiplied stage-node ID")
     var story := service.complete_story(profile, next, "story-1001001")
     t.assert_equal(story["quest_id"], "1001001", "story completion returns the canonical quest")
-    t.assert_equal(service.get_next_main_quest(catalog.quests, profile.quest_progress)["id"], "1001002", "story completion unlocks the first battle")
+    t.assert_equal(_next(service, catalog, profile)["id"], "1001002", "story completion unlocks the first battle")
     t.assert_equal(service.complete_story(profile, next, "story-1001001"), story, "story completion is idempotent")
+    profile.quest_progress["1001002"] = {"cleared": true, "clear_count": 1}
+    var after_battle := _next(service, catalog, profile)
+    t.assert_equal(after_battle["id"], "1001003", "clearing the first battle resolves the following story")
+    t.assert_equal(service.complete_story(profile, after_battle, "story-1001003")["quest_id"], "1001003", "following story completes locally")
+    t.assert_equal(_next(service, catalog, profile)["id"], "1002001", "original stage-node chain advances to the next battle")
+
+func _next(service, catalog, profile) -> Dictionary:
+    return service.get_next_main_quest(
+        catalog.chapters,
+        catalog.stage_nodes,
+        catalog.quests,
+        profile.quest_progress,
+        profile.roster,
+        2000000000
+    )
