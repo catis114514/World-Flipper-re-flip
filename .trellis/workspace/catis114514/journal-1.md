@@ -80,3 +80,9 @@
 - Added checked quest `1003002` with three independent Slango/Fox/one-eyed-rabbit emitters, the complete 37-state Fox boss graph, absolute delayed enemy Action DSL events, and offline progression through story `1004001`; pushed work commit `816b80292796f1c25abca20ce489163f172a0a98`.
 - Final review fixed same-step delayed-wave decrementing and fail-open `Wait` coercion. Converter input now validates exact event shape, integer type/range, and nested accumulation; integrated tests prove frames 0/12/24 and current owner/player aiming.
 - Gate: core converter 7/7; offline catalog determinism `ab9bfdbcd0600e752a31e2fed8d5705161608329964c2c7ca448de519e2a6ab6`; Godot `PASS 624 assertions` independently in two clean roots; four-battle E2E, editor scan, 120-frame smoke, server/gacha regressions, and runtime dependency audit passed. Task remains in progress at unconverted battle `1004002`, with exact terrain/spawn/visual parity and interactive Windows playthrough still pending.
+
+## 2026-07-23 - Windows playtest controls
+
+- Added Space/Down held-key composition for both flippers and Left/Up/Right skill shortcuts, while retaining numeric 1/2/3 aliases; pushed work commit `9c3a2961ca7207560285086b500f512cab0f0fcd`.
+- Gate: Godot `PASS 641 assertions` independently in two clean roots; real viewport key injection passes through the four-battle scene flow; editor scan, 120-frame smoke, server/gacha regressions, and runtime dependency audit passed.
+- Exported Windows x86-64 playtest builds to `/home/codex/artifacts/starpoint-windows-playtest.Zz9Nsx`. Release SHA-256 is `9010589ee7a4860e9619b76022b8a05fa0d4a383a7bd7136e01351f95bd08974`; it starts successfully for 120 headless frames under isolated Wine. Task remains in progress at `1004002`; user-owned Windows playthrough feedback is pending.
