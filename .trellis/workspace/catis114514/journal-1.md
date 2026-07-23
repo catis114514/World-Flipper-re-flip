@@ -69,3 +69,8 @@
 
 - Added checked quest `1002001`, multi-enemy/emitter battle runtime, and `1001001 -> 1001002 -> 1001003 -> 1002001` offline progression; pushed work commit `6a7e44c968566fd030daab0e16d7145d04de9758`.
 - Gate: core converter 5/5; offline catalog determinism `ab9bfdbcd0600e752a31e2fed8d5705161608329964c2c7ca448de519e2a6ab6`; Godot 518 assertions; two-battle flow, editor scan, and 120-frame smoke passed. Task remains in progress pending interactive Windows playthrough and exact terrain/spawn/visual parity.
+
+## 2026-07-23 - Third converted battle
+
+- Added checked quest `1002002`, reused the multi-emitter/Slango runtime without a quest-ID branch, and advanced offline progression through story `1003001`; pushed work commit `24bf2b502d0d9b6454f73b6d64262b71a98da6a6`.
+- Gate: core converter 5/5; offline catalog determinism `ab9bfdbcd0600e752a31e2fed8d5705161608329964c2c7ca448de519e2a6ab6`; Godot 556 assertions twice; three-battle flow, editor scan, 120-frame smoke, server/gacha regressions, and runtime dependency audit passed. Task remains in progress at unconverted battle `1003002` and pending exact terrain/spawn/visual parity plus interactive Windows playthrough.
