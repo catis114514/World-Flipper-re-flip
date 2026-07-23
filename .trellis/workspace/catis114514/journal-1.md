@@ -74,3 +74,9 @@
 
 - Added checked quest `1002002`, reused the multi-emitter/Slango runtime without a quest-ID branch, and advanced offline progression through story `1003001`; pushed work commit `24bf2b502d0d9b6454f73b6d64262b71a98da6a6`.
 - Gate: core converter 5/5; offline catalog determinism `ab9bfdbcd0600e752a31e2fed8d5705161608329964c2c7ca448de519e2a6ab6`; Godot 556 assertions twice; three-battle flow, editor scan, 120-frame smoke, server/gacha regressions, and runtime dependency audit passed. Task remains in progress at unconverted battle `1003002` and pending exact terrain/spawn/visual parity plus interactive Windows playthrough.
+
+## 2026-07-23 - Fourth converted battle
+
+- Added checked quest `1003002` with three independent Slango/Fox/one-eyed-rabbit emitters, the complete 37-state Fox boss graph, absolute delayed enemy Action DSL events, and offline progression through story `1004001`; pushed work commit `816b80292796f1c25abca20ce489163f172a0a98`.
+- Final review fixed same-step delayed-wave decrementing and fail-open `Wait` coercion. Converter input now validates exact event shape, integer type/range, and nested accumulation; integrated tests prove frames 0/12/24 and current owner/player aiming.
+- Gate: core converter 7/7; offline catalog determinism `ab9bfdbcd0600e752a31e2fed8d5705161608329964c2c7ca448de519e2a6ab6`; Godot `PASS 624 assertions` independently in two clean roots; four-battle E2E, editor scan, 120-frame smoke, server/gacha regressions, and runtime dependency audit passed. Task remains in progress at unconverted battle `1004002`, with exact terrain/spawn/visual parity and interactive Windows playthrough still pending.
