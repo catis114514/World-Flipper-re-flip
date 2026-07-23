@@ -214,6 +214,13 @@ Still non-parity: the original terrain/spawn coordinates and 90-frame spawn-poin
 - Final review replaced same-step relative countdowns with absolute due frames and made Action DSL `Wait` parsing fail closed for malformed shapes, non-integer values, and nested overflow.
 - Final gate: core converter 7/7; Godot `PASS 624 assertions` independently in each of two clean user-data roots; normal-input replay for all four converted fixtures; Godot editor scan; 120-frame native main-scene smoke; four-battle main-scene E2E; offline-catalog determinism; server-security regression; gacha-position regression; and runtime dependency audit all pass.
 
+## Godot Windows Playtest Controls (2026-07-23)
+
+- Space or Down Arrow controls both flippers. Left/Up/Right Arrow activates skill slots 1/2/3; numeric 1/2/3 remains available as a compatibility mapping. Keyboard skills trigger only on a non-echo press.
+- Mouse and touch retain the existing rule: battle-area presses control both flippers, while skill-button presses activate only that skill. Starting, finishing, failing, or leaving a battle clears held input state.
+- Input gate: Godot `PASS 641 assertions` independently in each of two clean user-data roots; real viewport key injection passes inside the four-battle scene flow; editor scan, 120-frame smoke, server/gacha regressions, and runtime dependency audit pass.
+- Windows x86-64 exports: `/home/codex/artifacts/starpoint-windows-playtest.Zz9Nsx/StarPointCNOffline-debug.exe` (`120976304` bytes, SHA-256 `c544caaea0a3f64434eae8f011e059c6341e2f8fe14da4346113f9c70629e155`) and `StarPointCNOffline-release.exe` (`127080880` bytes, SHA-256 `9010589ee7a4860e9619b76022b8a05fa0d4a383a7bd7136e01351f95bd08974`). The release starts successfully for 120 headless frames under isolated Wine.
+
 ### Legacy compatibility-server hardening
 
 - Signup viewer IDs are random sessions rather than predictable account IDs.

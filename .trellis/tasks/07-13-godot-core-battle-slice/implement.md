@@ -99,6 +99,13 @@ Rollback point: simulation remains independent of Godot nodes; presentation work
 - Final verification: core converter 7/7; fixture SHA-256 `80eaf928533f5f7c6dcf722b8d4c7376f3fc75ffa70a9893fd27db70a87c4918`; Godot `PASS 624 assertions` independently in each of two clean user-data roots; normal-input replay for all four fixtures and the four-battle main-scene E2E passed.
 - Godot editor scan, 120-frame native main-scene smoke, server-security regression, gacha-position regression, offline-catalog determinism, and runtime dependency audit passed. Final review found and fixed a frame-11 early-fire bug plus invalid `Wait` coercion, with focused regressions added before this full rerun.
 
+## Windows Playtest Controls and Export (2026-07-23)
+
+- Space and Down Arrow are independent held inputs for both flippers. Left/Up/Right Arrow activate skill slots 1/2/3 on the first press; numeric 1/2/3 remain compatibility aliases. Mouse/touch skill-button exclusion is unchanged, and battle lifecycle transitions clear held keyboard/touch input.
+- Added focused controller input tests plus a real viewport-event scene smoke. The latter proves Space/Down composition, arrow-key slot isolation, GUI-preemptive input consumption, and held-key cleanup at result settlement.
+- Verification: Godot `PASS 641 assertions` independently in each of two clean user-data roots; editor scan, 120-frame smoke, four-battle scene flow with real keyboard events, server-security regression, gacha-position regression, and runtime dependency audit pass.
+- Windows x86-64 playtest exports are under `/home/codex/artifacts/starpoint-windows-playtest.Zz9Nsx`: debug `120976304` bytes, SHA-256 `c544caaea0a3f64434eae8f011e059c6341e2f8fe14da4346113f9c70629e155`; release `127080880` bytes, SHA-256 `9010589ee7a4860e9619b76022b8a05fa0d4a383a7bd7136e01351f95bd08974`. The release executable also starts and completes a 120-frame headless smoke under an isolated Wine prefix.
+
 ## Risky Areas
 
 - Physics update order and numeric differences between ActionScript/Haxe and GDScript.

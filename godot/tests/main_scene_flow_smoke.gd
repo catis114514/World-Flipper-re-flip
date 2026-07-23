@@ -37,8 +37,47 @@ func _run() -> void:
     if int(scene.profile.stamina_state["stored_value"]) != first_stamina_before - 6:
         push_error("first scene battle did not deduct canonical stamina")
         quit(1); return
+    if not _send_key(KEY_SPACE, true):
+        push_error("Space battle input was not consumed before GUI routing")
+        quit(1); return
+    await process_frame
+    if not scene.battle.flippers_pressed:
+        push_error("Space did not press both flippers through the scene input pipeline")
+        quit(1); return
+    _send_key(KEY_DOWN, true)
+    _send_key(KEY_SPACE, false)
+    await process_frame
+    if not scene.battle.flippers_pressed:
+        push_error("releasing Space incorrectly released a held Down flipper input")
+        quit(1); return
+    _send_key(KEY_DOWN, false)
+    await process_frame
+    if scene.battle.flippers_pressed:
+        push_error("releasing Space and Down did not release the flippers")
+        quit(1); return
+    var skill_keys: Array[Key] = [KEY_LEFT, KEY_UP, KEY_RIGHT]
+    for skill_index in range(skill_keys.size()):
+        for skill_slot in scene.battle.skill_slots:
+            skill_slot["skill_point"] = int(skill_slot["max_skill_point"])
+        _send_key(skill_keys[skill_index], true)
+        await process_frame
+        var skill_snapshot: Array = scene.battle.get_progress_snapshot()["skill_slots"]
+        if int(skill_snapshot[skill_index]["skill_point"]) >= int(skill_snapshot[skill_index]["max_skill_point"]):
+            push_error("arrow key did not activate skill slot %d" % skill_index)
+            quit(1); return
+        for other_index in range(skill_snapshot.size()):
+            if other_index != skill_index and int(skill_snapshot[other_index]["skill_point"]) != int(skill_snapshot[other_index]["max_skill_point"]):
+                push_error("arrow key activated the wrong skill slot")
+                quit(1); return
+        _send_key(skill_keys[skill_index], false)
+        await process_frame
+    _send_key(KEY_SPACE, true)
+    await process_frame
     BattleTestDriver.clear_quest(scene.battle)
     scene._finish_battle()
+    if not scene.active_flipper_keys.is_empty():
+        push_error("battle finish did not clear held keyboard input")
+        quit(1); return
     var first_finished = scene.save_repository.load_profile()
     if not first_finished.active_run.is_empty() or int(first_finished.quest_progress.get("1001002", {}).get("clear_count", 0)) != 1:
         push_error("first scene result did not persist and clear active run")
@@ -146,3 +185,10 @@ func _run() -> void:
         quit(1); return
     print("PASS main scene four-battle progression flow smoke")
     quit(0)
+
+func _send_key(keycode: Key, pressed: bool) -> bool:
+    var event := InputEventKey.new()
+    event.keycode = keycode
+    event.pressed = pressed
+    root.push_input(event)
+    return root.is_input_handled()

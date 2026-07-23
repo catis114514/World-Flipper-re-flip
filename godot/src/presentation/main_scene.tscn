@@ -101,7 +101,7 @@ horizontal_alignment = 1
 [node name="HelpLabel" type="Label" parent="UI/BattleHUD"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
-text = "空格 / 鼠标左键：弹板"
+text = "空格 / ↓ / 左键：弹板  |  ← / ↑ / →：技能 1 / 2 / 3（数字键兼容）"
 horizontal_alignment = 1
 
 [node name="SkillButtons" type="HBoxContainer" parent="UI/BattleHUD"]
@@ -112,19 +112,19 @@ theme_override_constants/separation = 8
 custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 size_flags_horizontal = 3
-text = "技能 1"
+text = "[←] 技能 1"
 
 [node name="Skill2" type="Button" parent="UI/BattleHUD/SkillButtons"]
 custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 size_flags_horizontal = 3
-text = "技能 2"
+text = "[↑] 技能 2"
 
 [node name="Skill3" type="Button" parent="UI/BattleHUD/SkillButtons"]
 custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 size_flags_horizontal = 3
-text = "技能 3"
+text = "[→] 技能 3"
 
 [node name="ResultPanel" type="PanelContainer" parent="UI"]
 visible = false

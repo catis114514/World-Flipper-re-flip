@@ -35,6 +35,7 @@ func _initialize() -> void:
         preload("res://tests/test_multi_emitter_battle.gd").new(),
         preload("res://tests/test_enemy_action_executor.gd").new(),
         preload("res://tests/test_battle_session_service.gd").new(),
+        preload("res://tests/test_main_controller_input.gd").new(),
         preload("res://tests/test_main_scene.gd").new(),
         preload("res://tests/test_quest_progression.gd").new(),
         preload("res://tests/test_offline_catalog_repository.gd").new(),

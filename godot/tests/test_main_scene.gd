@@ -32,7 +32,14 @@ func run(t) -> void:
     t.assert_true(scene.has_node("UI/Menu/SystemLabel"), "main scene exposes catalog and operation status")
     t.assert_true(scene.has_node("UI/BattleHUD"), "main scene has battle HUD")
     t.assert_true(scene.has_node("UI/BattleHUD/SkillButtons/Skill1"), "battle HUD has touch skill one")
+    t.assert_true(scene.has_node("UI/BattleHUD/SkillButtons/Skill2"), "battle HUD has touch skill two")
     t.assert_true(scene.has_node("UI/BattleHUD/SkillButtons/Skill3"), "battle HUD has touch skill three")
+    t.assert_true(scene.has_node("UI/BattleHUD/HelpLabel"), "battle HUD exposes keyboard controls")
+    t.assert_equal(
+        scene.get_node("UI/BattleHUD/HelpLabel").text,
+        "空格 / ↓ / 左键：弹板  |  ← / ↑ / →：技能 1 / 2 / 3（数字键兼容）",
+        "battle HUD documents the arrow-key controls"
+    )
     t.assert_true(scene.has_node("UI/ResultPanel"), "main scene has result panel")
 
     var repository = StaticContentRepository.new()

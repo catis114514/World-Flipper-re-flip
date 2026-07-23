@@ -13,6 +13,8 @@ const BATTLE_FIXTURES := [
     {"id": "1002002", "path": "res://content/fixtures/quest_1002002.json"},
     {"id": "1003002", "path": "res://content/fixtures/quest_1003002.json"},
 ]
+const FLIPPER_KEYS := [KEY_SPACE, KEY_DOWN]
+const SKILL_SHORTCUT_LABELS := ["←", "↑", "→"]
 
 @onready var menu: Control = $UI/Menu
 @onready var profile_label: Label = $UI/Menu/ProfileLabel
@@ -51,6 +53,7 @@ var pending_result_action := ""
 var recovery_pending := false
 var last_notice := ""
 var active_touch_ids: Dictionary = {}
+var active_flipper_keys: Dictionary = {}
 
 func _ready() -> void:
     var configured_save_path := OS.get_environment("STARPOINT_SAVE_PATH")
@@ -99,11 +102,8 @@ func _process(delta: float) -> void:
     if battle == null or battle.status != "running":
         return
     fixed_step_accumulator += delta * 60.0
-    var flippers_pressed := not active_touch_ids.is_empty() or Input.is_key_pressed(KEY_SPACE) or (Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and not _pointer_over_skill_button())
+    var flippers_pressed := not active_touch_ids.is_empty() or not active_flipper_keys.is_empty() or (Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and not _pointer_over_skill_button())
     battle.set_flippers_pressed(flippers_pressed)
-    if Input.is_key_pressed(KEY_1): battle.activate_skill(0)
-    if Input.is_key_pressed(KEY_2): battle.activate_skill(1)
-    if Input.is_key_pressed(KEY_3): battle.activate_skill(2)
     while fixed_step_accumulator >= 1.0 and battle.status == "running":
         battle.step()
         fixed_step_accumulator -= 1.0
@@ -149,10 +149,48 @@ func _draw() -> void:
         true
     )
 
+func _input(event: InputEvent) -> void:
+    if _handle_battle_key_event(event):
+        get_viewport().set_input_as_handled()
+
+func _handle_battle_key_event(event: InputEvent) -> bool:
+    if not event is InputEventKey or battle == null or battle.status != "running":
+        return false
+    var key_event := event as InputEventKey
+    var keycode: Key = key_event.keycode
+    if keycode in FLIPPER_KEYS:
+        if not key_event.echo:
+            if key_event.pressed:
+                active_flipper_keys[keycode] = true
+            else:
+                active_flipper_keys.erase(keycode)
+        return true
+    var skill_slot := _skill_slot_for_key(keycode)
+    if skill_slot < 0:
+        return false
+    if key_event.pressed and not key_event.echo:
+        battle.activate_skill(skill_slot)
+    return true
+
+func _skill_slot_for_key(keycode: Key) -> int:
+    match keycode:
+        KEY_LEFT, KEY_1:
+            return 0
+        KEY_UP, KEY_2:
+            return 1
+        KEY_RIGHT, KEY_3:
+            return 2
+        _:
+            return -1
+
 func _unhandled_input(event: InputEvent) -> void:
     if event is InputEventScreenTouch and battle != null and battle.status == "running":
         if event.pressed: active_touch_ids[event.index] = true
         else: active_touch_ids.erase(event.index)
+
+func _clear_active_inputs() -> void:
+    active_touch_ids.clear()
+    active_flipper_keys.clear()
 
 func _pointer_over_skill_button() -> bool:
     var pointer := get_viewport().get_mouse_position()
@@ -174,7 +212,7 @@ func _refresh_skill_buttons() -> void:
             skill_buttons[index].disabled = true
             continue
         var slot: Dictionary = slots[index]
-        skill_buttons[index].text = "%s\n%d/%d" % [str(slot["name"]), int(slot["skill_point"]), int(slot["max_skill_point"])]
+        skill_buttons[index].text = "[%s] %s\n%d/%d" % [SKILL_SHORTCUT_LABELS[index], str(slot["name"]), int(slot["skill_point"]), int(slot["max_skill_point"])]
         skill_buttons[index].disabled = int(slot["skill_point"]) < int(slot["max_skill_point"])
 func _start_battle() -> void:
     if recovery_pending:
@@ -219,7 +257,7 @@ func _begin_battle_session() -> void:
         quest_label.text = "无法开始关卡，请检查本地档"
         return
     active_run_id = candidate_run_id
-    active_touch_ids.clear()
+    _clear_active_inputs()
     battle = started_battle
     fixed_step_accumulator = 0.0
     pending_result_action = ""
@@ -227,13 +265,13 @@ func _begin_battle_session() -> void:
     menu.visible = false
     result_panel.visible = false
     battle_hud.visible = true
-    help_label.text = "空格 / 鼠标左键：弹板  |  1/2/3：角色技能"
+    help_label.text = "空格 / ↓ / 左键：弹板  |  ← / ↑ / →：技能 1 / 2 / 3（数字键兼容）"
     _refresh_skill_buttons()
     enemy_label.text = _battle_status_text()
     queue_redraw()
 
 func _finish_battle() -> void:
-    active_touch_ids.clear()
+    _clear_active_inputs()
     var applied: bool = session_service.finish_battle(
         profile,
         battle,
@@ -252,7 +290,7 @@ func _finish_battle() -> void:
     queue_redraw()
 
 func _show_failed_battle() -> void:
-    active_touch_ids.clear()
+    _clear_active_inputs()
     var aborted: bool = session_service.abort_battle(profile)
     battle_hud.visible = false
     result_panel.visible = true
@@ -283,7 +321,7 @@ func _on_result_button_pressed() -> void:
     _return_to_menu()
 
 func _return_to_menu() -> void:
-    active_touch_ids.clear()
+    _clear_active_inputs()
     battle = null
     active_run_id = ""
     pending_result_action = ""
